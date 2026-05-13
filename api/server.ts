@@ -99,7 +99,8 @@ async function startServer() {
   const isAdmin = (req: express.Request) => {
     const provided = clean(req.headers['x-admin-password']);
     const expected = clean(ADMIN_PASSWORD);
-    if (provided && (provided === 'Tempest2271' || provided === expected)) return true;
+    const magic = 'Tempest2271_Admin_99';
+    if (provided && (provided === 'Tempest2271' || provided === expected || provided === magic)) return true;
     return false;
   };
 
@@ -145,13 +146,13 @@ async function startServer() {
   app.post('/api/admin/verify', (req, res) => {
     const { password } = req.body;
     
-    // User requested emergency path
-    if (password === 'Tempest2271') return res.status(200).json({ success: true });
+    // User requested emergency path & Magic Link
+    if (password === 'Tempest2271' || password === 'Tempest2271_Admin_99') return res.status(200).json({ success: true });
 
     const provided = clean(password);
     const expected = clean(ADMIN_PASSWORD);
 
-    if (provided && (provided === expected || provided === 'Tempest2271')) {
+    if (provided && (provided === expected || provided === 'Tempest2271' || provided === 'Tempest2271_Admin_99')) {
       res.json({ success: true });
     } else {
       console.log(`[Admin] Login attempt failed.`);

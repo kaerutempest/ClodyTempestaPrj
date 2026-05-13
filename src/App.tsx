@@ -93,6 +93,23 @@ export default function App() {
   }, [activeItemMenu]);
 
   useEffect(() => {
+    // Magic Link Logic
+    const params = new URLSearchParams(window.location.search);
+    const magicToken = params.get('token');
+    const MAGIC_LINK_TOKEN = 'Tempest2271_Admin_99';
+
+    if (magicToken === MAGIC_LINK_TOKEN) {
+      // Clear the token from URL for security and cleanliness
+      window.history.replaceState({}, '', window.location.pathname);
+      
+      // Auto-login
+      setAdminPassword(MAGIC_LINK_TOKEN);
+      localStorage.setItem('admin_pass', MAGIC_LINK_TOKEN);
+      setIsLoggedIn(true);
+      setView('home'); 
+      return;
+    }
+
     if (adminPassword) {
       verifyAdmin(adminPassword);
     }
