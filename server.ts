@@ -93,12 +93,14 @@ async function startServer() {
 
   app.use(express.json());
 
+  const clean = (str: any) => (str || '').toString().trim().replace(/[\u200B-\u200D\uFEFF\s]/g, '');
+
   // Admin Middleware
   const isAdmin = (req: express.Request) => {
-    const provided = (req.headers['x-admin-password'] as string || '').toString().trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
-    if (provided === 'Tempest2271') return true;
-    const expected = ADMIN_PASSWORD.trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
-    return provided === expected;
+    const provided = clean(req.headers['x-admin-password']);
+    const expected = clean(ADMIN_PASSWORD);
+    if (provided === 'Tempest2271' || provided === expected) return true;
+    return false;
   };
 
   // API Routes
@@ -142,11 +144,10 @@ async function startServer() {
 
   app.post('/api/admin/verify', (req, res) => {
     const { password } = req.body;
-    // Remove space, tabs, newlines and common invisible characters
-    const provided = (password || '').toString().trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
-    const expected = ADMIN_PASSWORD.trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
+    const provided = clean(password);
+    const expected = clean(ADMIN_PASSWORD);
 
-    if (provided === expected || provided === 'Tempest2271') {
+    if (provided === expected || (provided && provided === 'Tempest2271')) {
       res.json({ success: true });
     } else {
       console.log(`[Admin] Login attempt failed. Received length: ${provided.length}`);
