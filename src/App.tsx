@@ -109,14 +109,15 @@ export default function App() {
   }, [isLoggedIn]);
 
   const verifyAdmin = async (pass: string) => {
-    if (!pass) return;
+    const trimmedPass = (pass || '').trim();
+    if (!trimmedPass) return;
     setIsLoggingIn(true);
     setLoginError(false);
     try {
       const res = await fetch('/api/admin/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pass }),
+        body: JSON.stringify({ password: trimmedPass }),
       });
       if (res.ok) {
         setIsLoggedIn(true);

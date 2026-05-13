@@ -88,7 +88,9 @@ async function startServer() {
 
   // Admin Middleware
   const isAdmin = (req: express.Request) => {
-    return req.headers['x-admin-password'] === ADMIN_PASSWORD;
+    const provided = (req.headers['x-admin-password'] as string || '').trim();
+    const expected = ADMIN_PASSWORD.trim();
+    return provided === expected;
   };
 
   // API Routes
@@ -132,9 +134,13 @@ async function startServer() {
 
   app.post('/api/admin/verify', (req, res) => {
     const { password } = req.body;
-    if (password === ADMIN_PASSWORD) {
+    const provided = (password || '').trim();
+    const expected = ADMIN_PASSWORD.trim();
+
+    if (provided === expected) {
       res.json({ success: true });
     } else {
+      console.log(`[Admin] Login attempt failed. Expected length: ${expected.length}, Provided length: ${provided.length}`);
       res.status(401).json({ error: 'Unauthorized' });
     }
   });
