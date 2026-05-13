@@ -21,15 +21,20 @@ const ADMIN_PASSWORD = getAdminPassword();
 const app = express();
 
 // Ensure uploads directory exists for local/container dev
-// Note: On Vercel, this is read-only unless using /tmp, but standard for local
-const uploadDir = path.join(__dirname, 'uploads');
+// Note: On Vercel, this is read-only unless using /tmp.
+const uploadDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
+  try {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  } catch (e) {
+    console.error('Failed to create upload dir', e);
+  }
 }
 
 // Metadata/Settings paths
-const metadataFilePath = path.join(__dirname, 'metadata.json_db');
-const settingsFilePath = path.join(__dirname, 'settings.json_db');
+// On Vercel, these won't persist across restarts, but it's better than crashing.
+const metadataFilePath = process.env.VERCEL ? '/tmp/metadata.json_db' : path.join(__dirname, 'metadata.json_db');
+const settingsFilePath = process.env.VERCEL ? '/tmp/settings.json_db' : path.join(__dirname, 'settings.json_db');
 
 interface FileMetadata {
   id: string;

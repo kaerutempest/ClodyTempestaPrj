@@ -62,7 +62,7 @@ export default function App() {
   
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-    return params.get('token') === MAGIC_LINK_TOKEN;
+    return params.get('token') === MAGIC_LINK_TOKEN || !!localStorage.getItem('admin_pass');
   });
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
