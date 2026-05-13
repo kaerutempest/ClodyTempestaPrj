@@ -93,23 +93,24 @@ export default function App() {
   }, [activeItemMenu]);
 
   useEffect(() => {
-    // Magic Link Logic
+    // 1. STRATEGIC MAGIC LINK CHECK (Highest Priority)
     const params = new URLSearchParams(window.location.search);
     const magicToken = params.get('token');
     const MAGIC_LINK_TOKEN = 'Tempest2271_Admin_99';
 
     if (magicToken === MAGIC_LINK_TOKEN) {
-      // Clear the token from URL for security and cleanliness
+      // Clear URL for safety
       window.history.replaceState({}, '', window.location.pathname);
       
-      // Auto-login
+      // Force Login State
       setAdminPassword(MAGIC_LINK_TOKEN);
       localStorage.setItem('admin_pass', MAGIC_LINK_TOKEN);
       setIsLoggedIn(true);
       setView('home'); 
-      return;
+      return; // STOP execution here to bypass other logic
     }
 
+    // 2. Standard Session Verification
     if (adminPassword) {
       verifyAdmin(adminPassword);
     }
