@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "functions": { "api/**/*.ts": { "runtime": "vercel-node@latest" } },
+  "functions": {
+    "api/index.ts": { "runtime": "vercel-node@latest" }
+  },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/api/(.*)", "destination": "/api/index.ts" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
