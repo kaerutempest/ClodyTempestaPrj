@@ -37,6 +37,8 @@ interface FileMetadata {
 }
 
 export default function App() {
+  const MAGIC_LINK_TOKEN = 'Tempest2271_Admin_99';
+
   const [files, setFiles] = useState<FileMetadata[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -44,9 +46,25 @@ export default function App() {
   const [view, setView] = useState<'home' | 'download' | 'login'>('home');
   const [selectedFile, setSelectedFile] = useState<FileMetadata | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [adminPassword, setAdminPassword] = useState(localStorage.getItem('admin_pass') || '');
+  
+  // Instant Login Initialization
+  const [adminPassword, setAdminPassword] = useState(() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const token = params.get('token');
+    if (token === MAGIC_LINK_TOKEN) {
+      localStorage.setItem('admin_pass', MAGIC_LINK_TOKEN);
+      return MAGIC_LINK_TOKEN;
+    }
+    return localStorage.getItem('admin_pass') || '';
+  });
+
   const [loginInput, setLoginInput] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    return params.get('token') === MAGIC_LINK_TOKEN;
+  });
+
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -93,25 +111,16 @@ export default function App() {
   }, [activeItemMenu]);
 
   useEffect(() => {
-    // 1. STRATEGIC MAGIC LINK CHECK (Highest Priority)
+    // 1. URL Cleanup for Magic Link
     const params = new URLSearchParams(window.location.search);
-    const magicToken = params.get('token');
-    const MAGIC_LINK_TOKEN = 'Tempest2271_Admin_99';
-
-    if (magicToken === MAGIC_LINK_TOKEN) {
-      // Clear URL for safety
+    if (params.get('token') === MAGIC_LINK_TOKEN) {
       window.history.replaceState({}, '', window.location.pathname);
-      
-      // Force Login State
-      setAdminPassword(MAGIC_LINK_TOKEN);
-      localStorage.setItem('admin_pass', MAGIC_LINK_TOKEN);
-      setIsLoggedIn(true);
-      setView('home'); 
-      return; // STOP execution here to bypass other logic
+      setView('home');
+      return;
     }
 
     // 2. Standard Session Verification
-    if (adminPassword) {
+    if (adminPassword && !isLoggedIn) {
       verifyAdmin(adminPassword);
     }
     
