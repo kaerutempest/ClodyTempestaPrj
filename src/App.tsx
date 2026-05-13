@@ -114,10 +114,12 @@ export default function App() {
       });
       if (res.ok) {
         setIsLoggedIn(true);
+        setAdminPassword(pass);
         localStorage.setItem('admin_pass', pass);
         if (window.location.pathname === '/admin') setView('home');
       } else {
         localStorage.removeItem('admin_pass');
+        setAdminPassword('');
         setIsLoggedIn(false);
       }
     } catch (err) {
@@ -531,7 +533,7 @@ export default function App() {
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 border transition-all ${backgroundImage ? 'bg-slate-900/10 border-white/10 text-slate-900' : 'bg-slate-100 border-slate-200 text-slate-400'}`}>
                       <Lock className="w-6 h-6" />
                     </div>
-                    <h2 className={`text-xl font-black uppercase tracking-tight ${backgroundImage ? 'text-slate-900' : 'text-slate-800'}`}>Admin Access</h2>
+                    <h2 className={`text-xl font-black uppercase tracking-tight ${backgroundImage ? 'text-slate-900' : 'text-slate-800'}`}>Admin Login</h2>
                     <p className={`text-xs font-bold uppercase tracking-widest mt-2 ${backgroundImage ? 'text-slate-900/60' : 'text-slate-400'}`}>Authorization Protocol</p>
                   </div>
                   <form onSubmit={handleLogin} className="space-y-4">
@@ -546,14 +548,14 @@ export default function App() {
                       type="submit"
                       className="w-full py-3 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-red-700 transition-all active:scale-[0.98] text-xs shadow-lg shadow-red-600/20"
                     >
-                      Verify Identity
+                      Verify
                     </button>
                     <button 
                       type="button"
                       onClick={navigateToHome}
                       className={`w-full py-2 font-black text-[10px] uppercase tracking-[0.2em] transition-colors ${backgroundImage ? 'text-slate-900/60 hover:text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
                     >
-                      Bypass / Cancel
+                      Cancel
                     </button>
                   </form>
                 </div>
