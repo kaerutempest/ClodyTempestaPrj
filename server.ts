@@ -99,7 +99,7 @@ async function startServer() {
   const isAdmin = (req: express.Request) => {
     const provided = clean(req.headers['x-admin-password']);
     const expected = clean(ADMIN_PASSWORD);
-    if (provided === 'Tempest2271' || provided === expected) return true;
+    if (provided && (provided === 'Tempest2271' || provided === expected)) return true;
     return false;
   };
 
@@ -147,10 +147,10 @@ async function startServer() {
     const provided = clean(password);
     const expected = clean(ADMIN_PASSWORD);
 
-    if (provided === expected || (provided && provided === 'Tempest2271')) {
+    if (provided && (provided === expected || provided === 'Tempest2271')) {
       res.json({ success: true });
     } else {
-      console.log(`[Admin] Login attempt failed. Received length: ${provided.length}`);
+      console.log(`[Admin] Login attempt failed.`);
       res.status(401).json({ error: 'Unauthorized' });
     }
   });

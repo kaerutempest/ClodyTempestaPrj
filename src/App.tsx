@@ -116,8 +116,10 @@ export default function App() {
   }, [isLoggedIn]);
 
   const verifyAdmin = async (pass: string) => {
-    // Robust cleaning of the password string
-    const cleanPass = (pass || '').toString().trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
+    // Robust cleaning function to match backend
+    const clean = (str: any) => (str || '').toString().trim().replace(/[\u200B-\u200D\uFEFF\s]/g, '');
+    const cleanPass = clean(pass);
+    
     if (!cleanPass) return;
 
     setIsLoggingIn(true);
@@ -125,13 +127,16 @@ export default function App() {
     try {
       const res = await fetch('/api/admin/verify', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ password: cleanPass }),
       });
       if (res.ok) {
         setIsLoggedIn(true);
-        setAdminPassword(pass);
-        localStorage.setItem('admin_pass', pass);
+        setAdminPassword(cleanPass);
+        localStorage.setItem('admin_pass', cleanPass);
         if (window.location.pathname === '/admin') {
           window.history.pushState({}, '', '/');
           setView('home');
