@@ -116,15 +116,17 @@ export default function App() {
   }, [isLoggedIn]);
 
   const verifyAdmin = async (pass: string) => {
-    const trimmedPass = (pass || '').toString().trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
-    if (!trimmedPass) return;
+    // Robust cleaning of the password string
+    const cleanPass = (pass || '').toString().trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
+    if (!cleanPass) return;
+
     setIsLoggingIn(true);
     setLoginError(false);
     try {
       const res = await fetch('/api/admin/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: trimmedPass }),
+        body: JSON.stringify({ password: cleanPass }),
       });
       if (res.ok) {
         setIsLoggedIn(true);

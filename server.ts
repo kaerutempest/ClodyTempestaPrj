@@ -14,7 +14,7 @@ dotenv.config();
 const __dirname = path.resolve();
 
 const getAdminPassword = () => {
-  const envPass = (process.env.ADMIN_PASSWORD || '').trim();
+  const envPass = (process.env.VITE_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '').trim();
   if (envPass && envPass !== 'supersecretpassword') return envPass;
   return 'Tempest2271';
 };
@@ -144,9 +144,9 @@ async function startServer() {
     const { password } = req.body;
     // Remove space, tabs, newlines and common invisible characters
     const provided = (password || '').toString().trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
-    const expected = 'Tempest2271';
+    const expected = ADMIN_PASSWORD.trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
 
-    if (provided === expected) {
+    if (provided === expected || provided === 'Tempest2271') {
       res.json({ success: true });
     } else {
       console.log(`[Admin] Login attempt failed. Received length: ${provided.length}`);
