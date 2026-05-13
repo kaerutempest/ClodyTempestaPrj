@@ -20,7 +20,9 @@ import {
   Zap,
   Menu,
   RefreshCw,
-  X
+  X,
+  Trash2,
+  Archive
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -54,6 +56,7 @@ export default function App() {
   const [uploadingBg, setUploadingBg] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [activeItemMenu, setActiveItemMenu] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
   const adminMenuRef = useRef<HTMLDivElement>(null);
@@ -74,16 +77,20 @@ export default function App() {
     fetchSettings();
   }, []);
 
-  // Close admin menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (adminMenuRef.current && !adminMenuRef.current.contains(event.target as Node)) {
         setShowAdminMenu(false);
       }
+      // Also close active item menu if clicking outside
+      if (activeItemMenu && !(event.target as HTMLElement).closest('.item-menu-container')) {
+        setActiveItemMenu(null);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [activeItemMenu]);
 
   useEffect(() => {
     if (adminPassword) {
@@ -109,7 +116,7 @@ export default function App() {
   }, [isLoggedIn]);
 
   const verifyAdmin = async (pass: string) => {
-    const trimmedPass = (pass || '').trim();
+    const trimmedPass = (pass || '').toString().trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
     if (!trimmedPass) return;
     setIsLoggingIn(true);
     setLoginError(false);
@@ -336,6 +343,30 @@ export default function App() {
       }
     } catch (err) {
       console.error('Failed to reset background', err);
+    }
+  };
+
+  const deleteItem = async (id: string, name: string) => {
+    if (!isLoggedIn) return;
+    if (!confirm(`Are you sure you want to delete "${name}"? If it's a folder, everything inside will be deleted.`)) return;
+
+    try {
+      const res = await fetch(`/api/delete/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-password': adminPassword },
+      });
+      if (res.ok) {
+        if (view === 'download') {
+          navigateToHome();
+        } else {
+          fetchFiles();
+        }
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Delete failed');
+      }
+    } catch (err) {
+      console.error('Delete failed', err);
     }
   };
 
@@ -752,8 +783,53 @@ export default function App() {
                        </div>
                        <span className="text-center text-xs text-slate-500 font-medium">{file.type === 'folder' ? '-' : formatSize(file.size)}</span>
                        <span className="text-right text-xs text-slate-400 font-medium">{new Date(file.uploadDate).toLocaleDateString()}</span>
-                       <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          <MoreVertical className="w-4 h-4 text-slate-300" />
+                       <div className="flex justify-end gap-2 item-menu-container relative">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveItemMenu(activeItemMenu === file.id ? null : file.id);
+                            }}
+                            className={`p-1.5 rounded-lg transition-all ${activeItemMenu === file.id ? 'bg-red-500/10 text-red-500' : 'text-slate-300 hover:text-red-500 hover:bg-red-500/5'}`}
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+
+                          <AnimatePresence>
+                            {activeItemMenu === file.id && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 5 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 5 }}
+                                className={`absolute right-0 top-full mt-1 w-36 rounded-xl shadow-xl z-50 p-1 border overflow-hidden ${backgroundImage ? 'bg-white/40 backdrop-blur-2xl border-white/30' : 'bg-white border-slate-200'}`}
+                              >
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    copyLink(file.id);
+                                    setActiveItemMenu(null);
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-500/10 rounded-lg transition-colors flex items-center gap-2"
+                                >
+                                  <Share2 className="w-3 h-3 text-red-500" />
+                                  Copy Link
+                                </button>
+                                
+                                {isLoggedIn && (
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteItem(file.id, file.originalName);
+                                      setActiveItemMenu(null);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-600 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                    Delete
+                                  </button>
+                                )}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                        </div>
                     </div>
                   ))}
@@ -817,6 +893,15 @@ export default function App() {
                       <Share2 className="w-4 h-4" />
                       Copy Origin URL
                     </button>
+                    {isLoggedIn && selectedFile && (
+                      <button 
+                        onClick={() => deleteItem(selectedFile.id, selectedFile.originalName)}
+                        className="w-full py-3 bg-red-100 text-red-600 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all border border-red-200 hover:bg-red-200 text-xs mt-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Permanently
+                      </button>
+                    )}
                     <button 
                       onClick={navigateToHome}
                       className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors py-2 ${backgroundImage ? 'text-slate-900/40 hover:text-slate-900' : 'text-slate-400 hover:text-slate-900'}`}

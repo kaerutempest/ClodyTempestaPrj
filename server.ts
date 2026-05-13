@@ -94,9 +94,9 @@ async function startServer() {
 
   // Admin Middleware
   const isAdmin = (req: express.Request) => {
-    const provided = (req.headers['x-admin-password'] as string || '').trim();
+    const provided = (req.headers['x-admin-password'] as string || '').toString().trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
     if (provided === 'Tempest2271') return true;
-    const expected = ADMIN_PASSWORD.trim();
+    const expected = ADMIN_PASSWORD.trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
     return provided === expected;
   };
 
@@ -141,13 +141,14 @@ async function startServer() {
 
   app.post('/api/admin/verify', (req, res) => {
     const { password } = req.body;
-    const provided = (password || '').trim();
+    // Remove space, tabs, newlines and common invisible characters
+    const provided = (password || '').toString().trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
     const expected = 'Tempest2271';
 
     if (provided === expected) {
       res.json({ success: true });
     } else {
-      console.log(`[Admin] Login attempt failed. Received password of length ${provided.length}`);
+      console.log(`[Admin] Login attempt failed. Received length: ${provided.length}`);
       res.status(401).json({ error: 'Unauthorized' });
     }
   });
@@ -207,6 +208,51 @@ async function startServer() {
     saveMetadata();
 
     res.json({ success: true, folder: metadata });
+  });
+
+  app.delete('/api/delete/:id', (req, res) => {
+    if (!isAdmin(req)) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { id } = req.params;
+    const metadata = filesMetadata[id];
+
+    if (!metadata) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+
+    const deleteItem = (itemId: string) => {
+      const item = filesMetadata[itemId];
+      if (!item) return;
+
+      if (item.type === 'folder') {
+        // Find children
+        const children = Object.values(filesMetadata).filter(f => f.parentId === itemId);
+        children.forEach(child => deleteItem(child.id));
+        delete filesMetadata[itemId];
+      } else {
+        // Delete file from disk
+        const files = fs.readdirSync(uploadDir);
+        const actualFile = files.find(f => f.startsWith(itemId));
+        if (actualFile) {
+          const filePath = path.join(uploadDir, actualFile);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+        }
+        delete filesMetadata[itemId];
+      }
+    };
+
+    try {
+      deleteItem(id);
+      saveMetadata();
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Delete failed', err);
+      res.status(500).json({ error: 'Delete operation failed' });
+    }
   });
 
   app.get('/api/files', (req, res) => {
