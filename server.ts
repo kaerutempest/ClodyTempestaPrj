@@ -5,9 +5,14 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import { createServer as createViteServer } from 'vite';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Tempest2271';
 
 async function startServer() {
   const app = express();
@@ -83,7 +88,7 @@ async function startServer() {
 
   // Admin Middleware
   const isAdmin = (req: express.Request) => {
-    return req.headers['x-admin-password'] === process.env.ADMIN_PASSWORD;
+    return req.headers['x-admin-password'] === ADMIN_PASSWORD;
   };
 
   // API Routes
@@ -127,7 +132,7 @@ async function startServer() {
 
   app.post('/api/admin/verify', (req, res) => {
     const { password } = req.body;
-    if (password === process.env.ADMIN_PASSWORD) {
+    if (password === ADMIN_PASSWORD) {
       res.json({ success: true });
     } else {
       res.status(401).json({ error: 'Unauthorized' });

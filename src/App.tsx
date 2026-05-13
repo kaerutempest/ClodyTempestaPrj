@@ -43,7 +43,10 @@ export default function App() {
   const [selectedFile, setSelectedFile] = useState<FileMetadata | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [adminPassword, setAdminPassword] = useState(localStorage.getItem('admin_pass') || '');
+  const [loginInput, setLoginInput] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [folderStack, setFolderStack] = useState<FileMetadata[]>([]);
   const [showFolderInput, setShowFolderInput] = useState(false);
@@ -106,6 +109,9 @@ export default function App() {
   }, [isLoggedIn]);
 
   const verifyAdmin = async (pass: string) => {
+    if (!pass) return;
+    setIsLoggingIn(true);
+    setLoginError(false);
     try {
       const res = await fetch('/api/admin/verify', {
         method: 'POST',
@@ -116,22 +122,29 @@ export default function App() {
         setIsLoggedIn(true);
         setAdminPassword(pass);
         localStorage.setItem('admin_pass', pass);
-        if (window.location.pathname === '/admin') setView('home');
+        if (window.location.pathname === '/admin') {
+          window.history.pushState({}, '', '/');
+          setView('home');
+        } else {
+          setView('home');
+        }
       } else {
         localStorage.removeItem('admin_pass');
         setAdminPassword('');
         setIsLoggedIn(false);
+        if (view === 'login') setLoginError(true);
       }
     } catch (err) {
       console.error('Verify failed', err);
+      if (view === 'login') setLoginError(true);
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const pass = formData.get('password') as string;
-    verifyAdmin(pass);
+    verifyAdmin(loginInput);
   };
 
   const fetchFiles = async (parentId: string | null = currentFolderId) => {
@@ -535,20 +548,33 @@ export default function App() {
                     </div>
                     <h2 className={`text-xl font-black uppercase tracking-tight ${backgroundImage ? 'text-slate-900' : 'text-slate-800'}`}>Admin Login</h2>
                     <p className={`text-xs font-bold uppercase tracking-widest mt-2 ${backgroundImage ? 'text-slate-900/60' : 'text-slate-400'}`}>Authorization Protocol</p>
+                    {loginError && (
+                      <motion.p 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="text-red-500 text-[10px] font-black uppercase tracking-widest mt-4 bg-red-500/10 py-2 rounded-xl border border-red-500/20 shadow-sm"
+                      >
+                        Access Denied: Invalid Key
+                      </motion.p>
+                    )}
                   </div>
                   <form onSubmit={handleLogin} className="space-y-4">
                     <input 
                       name="password"
                       type="password"
+                      value={loginInput}
+                      onChange={(e) => setLoginInput(e.target.value)}
+                      disabled={isLoggingIn}
                       placeholder="Access Key" 
-                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${backgroundImage ? 'bg-white/20 border-white/30 focus:bg-white/40 focus:border-red-500 text-slate-900 placeholder-slate-700' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/20 focus:border-red-50'}`}
+                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${backgroundImage ? 'bg-white/20 border-white/30 focus:bg-white/40 focus:border-red-500 text-slate-900 placeholder-slate-700' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/20 focus:border-red-50'} ${loginError ? 'border-red-500/50' : ''}`}
                       autoFocus
                     />
                     <button 
                       type="submit"
-                      className="w-full py-3 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-red-700 transition-all active:scale-[0.98] text-xs shadow-lg shadow-red-600/20"
+                      disabled={isLoggingIn}
+                      className="w-full py-3 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-red-700 transition-all active:scale-[0.98] text-xs shadow-lg shadow-red-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Verify
+                      {isLoggingIn ? 'Authenticating...' : 'Verify'}
                     </button>
                     <button 
                       type="button"
