@@ -2,15 +2,16 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// In development (tsx), we are in an ESM environment. 
+// In production (esbuild cjs), we are in a CJS environment.
+// Using path.resolve() works for both as long as the server is started from the project root.
+const __dirname = path.resolve();
 
 const getAdminPassword = () => {
   const envPass = (process.env.ADMIN_PASSWORD || '').trim();
