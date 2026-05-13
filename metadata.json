@@ -1,0 +1,6 @@
+{
+  "name": "Tempesta Cloudy - File Center",
+  "description": "High-performance direct file hosting and indexing service. Fast, clean, and secure.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
