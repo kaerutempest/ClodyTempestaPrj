@@ -166,6 +166,19 @@ app.post('/api/create-folder', (req, res) => {
   res.json({ success: true, folder: metadata });
 });
 
+app.post('/api/rename', (req, res) => {
+  if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
+  const { id, newName } = req.body;
+  if (!id || !newName) return res.status(400).json({ error: 'ID and newName are required' });
+  
+  const metadata = filesMetadata[id];
+  if (!metadata) return res.status(404).json({ error: 'Item not found' });
+  
+  metadata.originalName = newName;
+  saveMetadata();
+  res.json({ success: true, item: metadata });
+});
+
 app.delete('/api/delete/:id', (req, res) => {
   if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { id } = req.params;

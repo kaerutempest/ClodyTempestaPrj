@@ -22,7 +22,8 @@ import {
   RefreshCw,
   X,
   Trash2,
-  Archive
+  Archive,
+  Edit2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -70,6 +71,8 @@ export default function App() {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [folderStack, setFolderStack] = useState<FileMetadata[]>([]);
   const [showFolderInput, setShowFolderInput] = useState(false);
+  const [renamingFileId, setRenamingFileId] = useState<string | null>(null);
+  const [renameInput, setRenameInput] = useState('');
   const [backgroundImage, setBackgroundImage] = useState('');
   const [uploadingBg, setUploadingBg] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
@@ -391,6 +394,33 @@ export default function App() {
       }
     } catch (err) {
       console.error('Failed to reset background', err);
+    }
+  };
+
+  const handleRename = async (e: React.FormEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!renameInput.trim()) return;
+    try {
+      const res = await fetch('/api/rename', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-password': adminPassword 
+        },
+        body: JSON.stringify({ id, newName: renameInput.trim() }),
+      });
+      if (res.ok) {
+        setFiles(files.map(f => f.id === id ? { ...f, originalName: renameInput.trim() } : f));
+        if (selectedFile?.id === id) {
+          setSelectedFile({ ...selectedFile, originalName: renameInput.trim() });
+        }
+      }
+    } catch (err) {
+      console.error('Rename failed', err);
+    } finally {
+      setRenamingFileId(null);
+      setRenameInput('');
     }
   };
 
@@ -827,15 +857,40 @@ export default function App() {
                       className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 items-center px-6 py-3.5 transition-colors group cursor-pointer ${backgroundImage ? 'hover:bg-white/20' : 'hover:bg-slate-50'}`}
                       onClick={() => file.type === 'folder' ? enterFolder(file) : fetchFile(file.id)}
                     >
-                       <div className="flex items-center gap-3">
+                       <div className="flex items-center gap-3 min-w-0 pr-2 grow">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm ${file.type === 'folder' ? (backgroundImage ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-amber-50 text-amber-500') : (backgroundImage ? 'bg-red-400/20 text-red-300 border border-red-400/30' : 'bg-red-50 text-red-500')}`}>
                              {file.type === 'folder' ? <FolderOpen className="w-4 h-4" /> : <File className="w-4 h-4" />}
                           </div>
-                          <span style={{ wordBreak: 'break-word' }} className={`text-sm md:text-base font-bold transition-colors ${backgroundImage ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] group-hover:text-red-300' : 'text-slate-800 group-hover:text-red-600'}`}>{file.originalName}</span>
+                          {renamingFileId === file.id ? (
+                            <form 
+                              onSubmit={(e) => handleRename(e, file.id)} 
+                              className="flex gap-2 w-full"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input 
+                                type="text"
+                                value={renameInput}
+                                onChange={(e) => setRenameInput(e.target.value)}
+                                className={`flex-1 px-3 py-1 border rounded-lg text-sm font-bold outline-none ${backgroundImage ? 'bg-white/20 border-white/30 text-white placeholder-white/50 focus:border-red-400 focus:bg-white/30' : 'bg-white border-slate-200 text-slate-800 focus:border-red-500'}`}
+                                autoFocus
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <button type="submit" className="px-3 py-1 bg-red-600/90 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors">Save</button>
+                              <button type="button" onClick={(e) => { e.stopPropagation(); setRenamingFileId(null); }} className="px-3 py-1 bg-slate-500/90 text-white rounded-lg text-xs font-bold hover:bg-slate-600 transition-colors">Cancel</button>
+                            </form>
+                          ) : (
+                            <div className="flex flex-col min-w-0 pr-2">
+                              <span style={{ wordBreak: 'break-word' }} className={`text-sm md:text-base font-bold transition-colors ${backgroundImage ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] group-hover:text-red-300' : 'text-slate-800 group-hover:text-red-600'}`}>{file.originalName}</span>
+                              <div className={`flex md:hidden text-[10px] gap-2 mt-0.5 ${backgroundImage ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>
+                                {file.type !== 'folder' && <span>{formatSize(file.size)}</span>}
+                                <span>{new Date(file.uploadDate).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                          )}
                        </div>
-                       <span className={`hidden md:block text-center text-xs font-medium ${backgroundImage ? 'text-white/80' : 'text-slate-500'}`}>{file.type === 'folder' ? '-' : formatSize(file.size)}</span>
-                       <span className={`hidden md:block text-right text-xs font-medium ${backgroundImage ? 'text-white/60' : 'text-slate-400'}`}>{new Date(file.uploadDate).toLocaleDateString()}</span>
-                       <div className="flex justify-end gap-1 relative">
+                       <span className={`hidden md:block text-center text-xs font-medium ${backgroundImage ? 'text-white/80 drop-shadow-sm' : 'text-slate-500'}`}>{file.type === 'folder' ? '-' : formatSize(file.size)}</span>
+                       <span className={`hidden md:block text-right text-xs font-medium ${backgroundImage ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>{new Date(file.uploadDate).toLocaleDateString()}</span>
+                       <div className="flex justify-end gap-1 relative shrink-0">
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
@@ -848,16 +903,29 @@ export default function App() {
                           </button>
                           
                           {isLoggedIn && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteItem(file.id, file.originalName);
-                              }}
-                              className="p-1.5 rounded-lg text-red-500 hover:text-white hover:bg-red-500 transition-all md:opacity-0 md:group-hover:opacity-100 opacity-100"
-                              title="Delete Resource"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRenamingFileId(file.id);
+                                  setRenameInput(file.originalName);
+                                }}
+                                className="p-1.5 rounded-lg text-blue-400 hover:text-white hover:bg-blue-500 transition-all md:opacity-0 md:group-hover:opacity-100 opacity-100"
+                                title="Rename Resource"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteItem(file.id, file.originalName);
+                                }}
+                                className="p-1.5 rounded-lg text-red-500 hover:text-white hover:bg-red-500 transition-all md:opacity-0 md:group-hover:opacity-100 opacity-100"
+                                title="Delete Resource"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
                           )}
                        </div>
                     </div>
@@ -899,7 +967,34 @@ export default function App() {
                   </div>
                   
                   <div className="space-y-4">
-                    <h1 style={{ wordBreak: 'break-word' }} className={`text-2xl font-black tracking-tighter uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>{selectedFile?.originalName}</h1>
+                    {renamingFileId === selectedFile?.id && selectedFile ? (
+                        <form 
+                          onSubmit={(e) => handleRename(e, selectedFile.id)} 
+                          className="flex gap-2 w-full mt-2 mb-2 justify-center"
+                        >
+                          <input 
+                            type="text"
+                            value={renameInput}
+                            onChange={(e) => setRenameInput(e.target.value)}
+                            className={`px-3 py-1.5 border rounded-lg text-lg font-black outline-none ${backgroundImage ? 'bg-white/20 border-white/30 text-white placeholder-white/50 focus:border-red-400 focus:bg-white/30' : 'bg-white border-slate-200 text-slate-800 focus:border-red-500'}`}
+                            autoFocus
+                          />
+                          <button type="submit" className="px-4 py-1.5 bg-red-600/90 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors">Save</button>
+                          <button type="button" onClick={() => setRenamingFileId(null)} className="px-4 py-1.5 bg-slate-500/90 text-white rounded-lg text-sm font-bold hover:bg-slate-600 transition-colors">Cancel</button>
+                        </form>
+                    ) : (
+                        <h1 style={{ wordBreak: 'break-word' }} className={`text-2xl font-black tracking-tighter uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] flex flex-wrap items-center justify-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>
+                          {selectedFile?.originalName}
+                          {isLoggedIn && selectedFile && (
+                             <button 
+                               onClick={() => { setRenamingFileId(selectedFile.id); setRenameInput(selectedFile.originalName); }}
+                               className="p-1.5 rounded-lg text-blue-400 hover:text-white hover:bg-blue-500 transition-all opacity-50 hover:opacity-100"
+                             >
+                                <Edit2 className="w-5 h-5" />
+                             </button>
+                          )}
+                        </h1>
+                    )}
                     <div className={`flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-widest ${backgroundImage ? 'text-white/70' : 'text-slate-400'}`}>
                       <span>{formatSize(selectedFile?.size || 0)}</span>
                       <span className={`w-1.5 h-1.5 rounded-full ${backgroundImage ? 'bg-white/40' : 'bg-slate-200'}`} />
