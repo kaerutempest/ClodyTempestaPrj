@@ -435,7 +435,7 @@ export default function App() {
   );
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 ${backgroundImage ? 'bg-slate-900/10' : 'bg-slate-50'} text-slate-900 font-sans selection:bg-red-100 selection:text-red-900 overflow-x-hidden relative`}>
+    <div className={`min-h-[100dvh] transition-colors duration-500 w-full relative overflow-x-hidden ${backgroundImage ? 'bg-slate-900/10' : 'bg-slate-50'} text-slate-900 font-sans selection:bg-red-100 selection:text-red-900`}>
       {/* Background Layer */}
       <AnimatePresence>
         {backgroundImage && (
@@ -443,27 +443,29 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-0 pointer-events-none"
+            className="fixed top-0 left-0 w-full h-[100dvh] z-0 pointer-events-none"
             style={{ 
               backgroundImage: `url(${backgroundImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat'
+              backgroundRepeat: 'no-repeat',
+              transform: 'translateZ(0)',
+              willChange: 'transform'
             }}
           >
-            <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]" />
+            <div className="absolute inset-0 bg-slate-900/60" />
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Header - Floating Blurry Tablet */}
       <header className="sticky top-4 z-50 px-4 mb-6">
-        <div className={`max-w-6xl mx-auto h-14 px-4 flex items-center justify-between rounded-2xl border transition-all duration-500 ${backgroundImage ? 'bg-white/20 backdrop-blur-2xl border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.05)]' : 'bg-white/90 backdrop-blur-md border-slate-200 shadow-lg shadow-slate-200/40'}`}>
+        <div className={`max-w-6xl mx-auto h-14 px-4 flex items-center justify-between rounded-2xl border transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/30 backdrop-blur-md border-white/20 shadow-sm' : 'bg-white/90 backdrop-blur-md border-slate-200 shadow-sm'}`}>
           <div 
             className="flex items-center gap-3 cursor-pointer group" 
             onClick={navigateToHome}
           >
-            <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all duration-300 overflow-hidden ${backgroundImage ? 'bg-slate-900/30 backdrop-blur-md border border-white/10' : 'bg-linear-to-br from-slate-800 to-slate-900'}`}>
+            <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all duration-300 overflow-hidden transform-gpu ${backgroundImage ? 'bg-slate-900/40 backdrop-blur-md border border-white/10' : 'bg-linear-to-br from-slate-800 to-slate-900'}`}>
               <Cloud className="w-4 h-4 text-slate-100 opacity-40 group-hover:opacity-60 transition-opacity" />
               <Zap className="absolute inset-0 m-auto w-4 h-4 text-red-500 fill-red-500 group-hover:scale-110 transition-all drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
             </div>
@@ -501,7 +503,8 @@ export default function App() {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className={`absolute right-0 mt-2 w-48 border rounded-xl shadow-2xl p-1 z-[60] overflow-hidden transition-all ${backgroundImage ? 'bg-white/40 backdrop-blur-2xl border-white/30' : 'bg-white border-slate-200'}`}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className={`absolute right-0 mt-2 w-48 border rounded-xl shadow-lg p-1 z-[60] overflow-hidden ${backgroundImage ? 'bg-white/40 backdrop-blur-sm border-white/30' : 'bg-white border-slate-200'}`}
                     >
                       <div className="px-3 py-2 text-[10px] uppercase tracking-widest text-slate-400 font-bold border-b border-slate-50/10 mb-1">
                         Display Settings
@@ -581,7 +584,8 @@ export default function App() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className={`md:hidden border-b overflow-hidden z-40 relative transition-all duration-300 ${backgroundImage ? 'bg-white/20 backdrop-blur-2xl border-white/20' : 'bg-white border-slate-200'}`}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className={`md:hidden border-b overflow-hidden z-40 relative ${backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20' : 'bg-white border-slate-200'}`}
           >
             <div className="px-4 py-4 space-y-4">
               <button 
@@ -621,7 +625,7 @@ export default function App() {
                 exit={{ opacity: 0, y: -10 }}
                 className="max-w-sm mx-auto pt-20"
               >
-                <div className={`p-8 rounded-2xl border shadow-xl transition-all duration-500 ${backgroundImage ? 'bg-white/20 backdrop-blur-2xl border-white/20' : 'bg-white border-slate-200'}`}>
+                <div className={`p-8 rounded-2xl border shadow-lg transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200'}`}>
                   <div className="text-center mb-6">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 border transition-all ${backgroundImage ? 'bg-slate-900/10 border-white/10 text-slate-900' : 'bg-slate-100 border-slate-200 text-slate-400'}`}>
                       <Lock className="w-6 h-6" />
@@ -675,7 +679,7 @@ export default function App() {
               className="space-y-6"
             >
               {/* Support Banner - ItsNoMercy style */}
-              <div className={`rounded-2xl p-6 text-white relative overflow-hidden group transition-all duration-500 border ${backgroundImage ? 'bg-red-600/40 backdrop-blur-xl border-red-400/20 shadow-lg shadow-red-900/10' : 'bg-red-600 border-red-700'}`}>
+              <div className={`rounded-2xl p-6 text-white relative overflow-hidden group transition-all duration-300 border transform-gpu ${backgroundImage ? 'bg-red-600/50 backdrop-blur-md border-red-400/20 shadow-md shadow-red-900/10' : 'bg-red-600 border-red-700'}`}>
                  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform">
                     <Heart className="w-24 h-24" />
                  </div>
@@ -690,7 +694,7 @@ export default function App() {
 
               {/* Breadcrumbs & Controls */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-2xl border shadow-sm grow transition-all duration-500 ${backgroundImage ? 'bg-white/20 backdrop-blur-2xl border-white/20' : 'bg-white border-slate-200 text-slate-500'}`}>
+                <div className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-2xl border shadow-sm grow transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200 text-slate-500'}`}>
                   <FolderOpen className="w-4 h-4 text-red-500" />
                   <span className={`hover:text-red-600 cursor-pointer ${backgroundImage ? 'text-slate-900/60' : ''}`} onClick={navigateToHome}>Listed App</span>
                   {folderStack.map((folder, i) => (
@@ -716,7 +720,7 @@ export default function App() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={goBack}
-                      className={`p-2.5 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center border ${backgroundImage ? 'bg-white/20 backdrop-blur-2xl border-white/20 text-slate-900' : 'bg-white border-slate-200 text-slate-600'}`}
+                      className={`p-2.5 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center border ${backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-slate-900' : 'bg-white border-slate-200 text-slate-600'}`}
                       title="Go Back"
                     >
                       <ChevronRight className="w-5 h-5 rotate-180" />
@@ -726,7 +730,7 @@ export default function App() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => fetchFiles()}
-                    className={`p-2.5 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center border ${backgroundImage ? 'bg-white/20 backdrop-blur-2xl border-white/20 text-slate-900' : 'bg-white border-slate-200 text-slate-600'}`}
+                    className={`p-2.5 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center border ${backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-slate-900' : 'bg-white border-slate-200 text-slate-600'}`}
                     title="Refresh"
                   >
                     <RefreshCw className="w-5 h-5" />
@@ -735,12 +739,12 @@ export default function App() {
                     <motion.button 
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className={`p-2.5 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center border ${backgroundImage ? 'bg-white/20 backdrop-blur-2xl border-white/20 text-slate-900' : 'bg-white border-slate-200 text-slate-600'}`}
+                      className={`p-2.5 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center border ${backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-slate-900' : 'bg-white border-slate-200 text-slate-600'}`}
                       title="More Options"
                     >
                       <MoreVertical className="w-5 h-5" />
                     </motion.button>
-                    <div className={`absolute right-0 top-full mt-2 w-44 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[60] transform origin-top-right scale-95 group-hover:scale-100 p-1 border ${backgroundImage ? 'bg-white/40 backdrop-blur-2xl border-white/30' : 'bg-white border-slate-200'}`}>
+                    <div className={`absolute right-0 top-full mt-2 w-44 rounded-2xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[60] transform origin-top-right scale-95 group-hover:scale-100 p-1 border ${backgroundImage ? 'bg-white/40 backdrop-blur-sm border-white/30' : 'bg-white border-slate-200'}`}>
                        <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-slate-900' : 'text-slate-600'}`} onClick={() => fetchFiles()}>
                           <RefreshCw className="w-3.5 h-3.5 text-red-500" />
                           Force Sync
@@ -755,7 +759,7 @@ export default function App() {
               </div>
 
               {/* Main Container */}
-              <div className={`rounded-2xl shadow-xl overflow-hidden min-h-[400px] transition-all duration-500 relative z-10 border ${backgroundImage ? 'bg-white/20 backdrop-blur-2xl border-white/20' : 'bg-white border-slate-200'}`}>
+              <div className={`rounded-2xl shadow-md overflow-hidden min-h-[400px] transition-all duration-300 relative z-10 border transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200'}`}>
                 {/* Control Bar */}
                 <div className={`p-4 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all ${backgroundImage ? 'border-white/10' : 'border-slate-100'}`}>
                   <div className="relative flex-1 max-w-md">
@@ -808,7 +812,7 @@ export default function App() {
                 )}
 
                 {/* File List Header */}
-                <div className={`grid grid-cols-[1fr_80px_120px_40px] px-6 py-2 text-[10px] font-bold uppercase tracking-widest border-b ${backgroundImage ? 'bg-white/30 text-slate-600 border-white/10' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                <div className={`grid grid-cols-[1fr_80px_120px_auto] px-6 py-2 text-[10px] font-bold uppercase tracking-widest border-b ${backgroundImage ? 'bg-white/30 text-slate-600 border-white/10' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
                    <span>Name</span>
                    <span className="text-center">Size</span>
                    <span className="text-right">Date</span>
@@ -820,64 +824,41 @@ export default function App() {
                   {filteredFiles.map((file) => (
                     <div 
                       key={file.id}
-                      className={`grid grid-cols-[1fr_80px_120px_40px] items-center px-6 py-3.5 transition-colors group cursor-pointer ${backgroundImage ? 'hover:bg-white/40' : 'hover:bg-slate-50'}`}
+                      className={`grid grid-cols-[1fr_80px_120px_auto] items-center px-6 py-3.5 transition-colors group cursor-pointer ${backgroundImage ? 'hover:bg-white/40' : 'hover:bg-slate-50'}`}
                       onClick={() => file.type === 'folder' ? enterFolder(file) : fetchFile(file.id)}
                     >
                        <div className="flex items-center gap-3 min-w-0">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform ${file.type === 'folder' ? 'bg-amber-50 text-amber-500' : 'bg-red-50 text-red-500'}`}>
                              {file.type === 'folder' ? <FolderOpen className="w-4 h-4" /> : <File className="w-4 h-4" />}
                           </div>
-                          <span className="text-sm font-medium truncate text-slate-700 group-hover:text-red-600 transition-colors">{file.originalName}</span>
+                          <span className="text-sm font-medium break-all text-slate-700 group-hover:text-red-600 transition-colors">{file.originalName}</span>
                        </div>
                        <span className="text-center text-xs text-slate-500 font-medium">{file.type === 'folder' ? '-' : formatSize(file.size)}</span>
                        <span className="text-right text-xs text-slate-400 font-medium">{new Date(file.uploadDate).toLocaleDateString()}</span>
-                       <div className="flex justify-end gap-2 item-menu-container relative">
+                       <div className="flex justify-end gap-1 relative">
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
-                              setActiveItemMenu(activeItemMenu === file.id ? null : file.id);
+                              copyLink(file.id);
                             }}
-                            className={`p-1.5 rounded-lg transition-all ${activeItemMenu === file.id ? 'bg-red-500/10 text-red-500' : 'text-slate-300 hover:text-red-500 hover:bg-red-500/5'}`}
+                            className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-500/5 transition-all"
+                            title="Copy Link"
                           >
-                            <MoreVertical className="w-4 h-4" />
+                            <Share2 className="w-4 h-4" />
                           </button>
-
-                          <AnimatePresence>
-                            {activeItemMenu === file.id && (
-                              <motion.div
-                                initial={{ opacity: 0, scale: 0.9, y: 5 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.9, y: 5 }}
-                                className={`absolute right-0 top-full mt-1 w-36 rounded-xl shadow-xl z-50 p-1 border overflow-hidden ${backgroundImage ? 'bg-white/40 backdrop-blur-2xl border-white/30' : 'bg-white border-slate-200'}`}
-                              >
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    copyLink(file.id);
-                                    setActiveItemMenu(null);
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-500/10 rounded-lg transition-colors flex items-center gap-2"
-                                >
-                                  <Share2 className="w-3 h-3 text-red-500" />
-                                  Copy Link
-                                </button>
-                                
-                                {isLoggedIn && (
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      deleteItem(file.id, file.originalName);
-                                      setActiveItemMenu(null);
-                                    }}
-                                    className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-600 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                    Delete
-                                  </button>
-                                )}
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
+                          
+                          {isLoggedIn && (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteItem(file.id, file.originalName);
+                              }}
+                              className="p-1.5 rounded-lg text-red-500 hover:text-white hover:bg-red-500 transition-all md:opacity-0 md:group-hover:opacity-100 opacity-100"
+                              title="Delete Resource"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                        </div>
                     </div>
                   ))}
@@ -910,7 +891,7 @@ export default function App() {
               exit={{ opacity: 0, scale: 0.98 }}
               className="max-w-2xl mx-auto space-y-6"
             >
-              <div className={`rounded-2xl shadow-2xl overflow-hidden relative z-10 border transition-all duration-500 ${backgroundImage ? 'bg-white/20 backdrop-blur-2xl border-white/20' : 'bg-white border-slate-200'}`}>
+              <div className={`rounded-2xl shadow-lg overflow-hidden relative z-10 border transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200'}`}>
                 <div className="h-2 bg-red-600" />
                 <div className="p-8 md:p-12 text-center space-y-8">
                   <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto transition-all border shadow-inner ${backgroundImage ? 'bg-slate-900/10 border-white/10 text-slate-900' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
@@ -918,7 +899,7 @@ export default function App() {
                   </div>
                   
                   <div className="space-y-4">
-                    <h1 className={`text-2xl font-black tracking-tighter uppercase ${backgroundImage ? 'text-slate-900' : 'text-slate-800'}`}>{selectedFile?.originalName}</h1>
+                    <h1 className={`text-2xl font-black tracking-tighter uppercase break-all ${backgroundImage ? 'text-slate-900' : 'text-slate-800'}`}>{selectedFile?.originalName}</h1>
                     <div className={`flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-widest ${backgroundImage ? 'text-slate-900/60' : 'text-slate-400'}`}>
                       <span>{formatSize(selectedFile?.size || 0)}</span>
                       <span className={`w-1.5 h-1.5 rounded-full ${backgroundImage ? 'bg-slate-900/20' : 'bg-slate-200'}`} />
