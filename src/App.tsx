@@ -460,7 +460,7 @@ export default function App() {
 
       {/* Header - Floating Blurry Tablet */}
       <header className="sticky top-4 z-50 px-4 mb-6">
-        <div className={`max-w-6xl mx-auto h-14 px-4 flex items-center justify-between rounded-2xl border transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/30 backdrop-blur-md border-white/20 shadow-sm' : 'bg-white/90 backdrop-blur-md border-slate-200 shadow-sm'}`}>
+        <div className={`max-w-6xl mx-auto h-14 px-4 flex items-center justify-between rounded-2xl border transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/50 backdrop-blur-lg border-white/40 shadow-sm' : 'bg-white/90 backdrop-blur-md border-slate-200 shadow-sm'}`}>
           <div 
             className="flex items-center gap-3 cursor-pointer group" 
             onClick={navigateToHome}
@@ -831,7 +831,7 @@ export default function App() {
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform ${file.type === 'folder' ? 'bg-amber-50 text-amber-500' : 'bg-red-50 text-red-500'}`}>
                              {file.type === 'folder' ? <FolderOpen className="w-4 h-4" /> : <File className="w-4 h-4" />}
                           </div>
-                          <span className="text-sm font-medium break-all text-slate-700 group-hover:text-red-600 transition-colors">{file.originalName}</span>
+                          <span className={`text-sm truncate transition-colors ${backgroundImage ? 'text-slate-900 font-bold group-hover:text-red-700' : 'text-slate-700 font-medium group-hover:text-red-600'}`}>{file.originalName}</span>
                        </div>
                        <span className="text-center text-xs text-slate-500 font-medium">{file.type === 'folder' ? '-' : formatSize(file.size)}</span>
                        <span className="text-right text-xs text-slate-400 font-medium">{new Date(file.uploadDate).toLocaleDateString()}</span>
