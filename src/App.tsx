@@ -460,7 +460,7 @@ export default function App() {
 
       {/* Header - Floating Blurry Tablet */}
       <header className="sticky top-4 z-50 px-4 mb-6">
-        <div className={`max-w-6xl mx-auto h-14 px-4 flex items-center justify-between rounded-2xl border transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/50 backdrop-blur-lg border-white/40 shadow-sm' : 'bg-white/90 backdrop-blur-md border-slate-200 shadow-sm'}`}>
+        <div className={`max-w-6xl mx-auto h-14 px-4 flex items-center justify-between rounded-2xl border transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20 shadow-sm' : 'bg-white/90 backdrop-blur-md border-slate-200 shadow-sm'}`}>
           <div 
             className="flex items-center gap-3 cursor-pointer group" 
             onClick={navigateToHome}
@@ -469,19 +469,19 @@ export default function App() {
               <Cloud className="w-4 h-4 text-slate-100 opacity-40 group-hover:opacity-60 transition-opacity" />
               <Zap className="absolute inset-0 m-auto w-4 h-4 text-red-500 fill-red-500 group-hover:scale-110 transition-all drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
             </div>
-            <span className={`text-base font-black tracking-tighter group-hover:text-red-600 transition-colors uppercase ${backgroundImage ? 'text-slate-900' : 'text-slate-800'}`}>Tempesta <span className={backgroundImage ? 'text-slate-800/60 font-bold' : 'text-slate-400 font-medium'}>Cloudy</span></span>
+            <span className={`text-base font-black tracking-tighter group-hover:text-red-500 transition-colors uppercase drop-shadow-sm ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>Tempesta <span className={backgroundImage ? 'text-white/70 font-bold' : 'text-slate-400 font-medium'}>Cloudy</span></span>
           </div>
           
           <div className="flex items-center gap-3 md:gap-5">
-            <nav className={`hidden md:flex items-center gap-5 text-[10px] font-black uppercase tracking-widest ${backgroundImage ? 'text-slate-900' : 'text-slate-600'}`}>
-              <button onClick={navigateToHome} className="hover:text-red-600 transition-colors flex items-center gap-2"><Home className="w-3.5 h-3.5"/> Beranda</button>
-              <a href="https://saweria.co/Kaedesu" target="_blank" className="hover:text-pink-600 transition-colors flex items-center gap-2"><Heart className="w-3.5 h-3.5"/> Donate</a>
+            <nav className={`hidden md:flex items-center gap-5 text-[10px] font-black uppercase tracking-widest drop-shadow-sm ${backgroundImage ? 'text-white' : 'text-slate-600'}`}>
+              <button onClick={navigateToHome} className="hover:text-red-400 transition-colors flex items-center gap-2"><Home className="w-3.5 h-3.5"/> Beranda</button>
+              <a href="https://saweria.co/Kaedesu" target="_blank" className="hover:text-pink-400 transition-colors flex items-center gap-2"><Heart className="w-3.5 h-3.5"/> Donate</a>
             </nav>
-            <div className={`h-5 w-px hidden md:block ${backgroundImage ? 'bg-slate-900/10' : 'bg-slate-200'}`} />
+            <div className={`h-5 w-px hidden md:block ${backgroundImage ? 'bg-white/20' : 'bg-slate-200'}`} />
             
             {/* Mobile Menu Toggle */}
             <button 
-              className={`md:hidden p-2 rounded-xl transition-all active:scale-95 ${backgroundImage ? 'bg-slate-900/10 text-slate-900 border border-white/10' : 'text-slate-600 hover:bg-slate-100 bg-slate-50'}`}
+              className={`md:hidden p-2 rounded-xl transition-all active:scale-95 ${backgroundImage ? 'bg-white/10 text-white border border-white/20 hover:bg-white/20' : 'text-slate-600 hover:bg-slate-100 bg-slate-50'}`}
               onClick={() => setShowMobileMenu(!showMobileMenu)}
             >
               {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -491,9 +491,9 @@ export default function App() {
               <div className="relative" ref={adminMenuRef}>
                 <button 
                   onClick={() => setShowAdminMenu(!showAdminMenu)}
-                  className={`flex items-center gap-2 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border shadow-sm ${backgroundImage ? 'bg-white/20 backdrop-blur-md text-slate-900 border-white/20 hover:bg-white/30' : 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100'}`}
+                  className={`flex items-center gap-2 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border shadow-sm ${backgroundImage ? 'bg-white/20 backdrop-blur-md text-white border-white/20 hover:bg-white/30 drop-shadow-sm' : 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100'}`}
                 >
-                   <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${backgroundImage ? 'bg-slate-900' : 'bg-red-500'}`} />
+                   <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${backgroundImage ? 'bg-white' : 'bg-red-500'}`} />
                    Admin
                 </button>
                 
@@ -590,14 +590,14 @@ export default function App() {
             <div className="px-4 py-4 space-y-4">
               <button 
                 onClick={() => { navigateToHome(); setShowMobileMenu(false); }} 
-                className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-all ${backgroundImage ? 'text-slate-900 hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50'}`}
+                className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-all drop-shadow-sm ${backgroundImage ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50'}`}
               >
                 <Home className="w-5 h-5 text-red-500" /> Beranda
               </button>
               <a 
                 href="https://saweria.co/Kaedesu" 
                 target="_blank" 
-                className={`block w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-all ${backgroundImage ? 'text-slate-900 hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50'}`}
+                className={`block w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-all drop-shadow-sm ${backgroundImage ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50'}`}
                 onClick={() => setShowMobileMenu(false)}
               >
                 <Heart className="w-5 h-5 text-pink-500" /> Support/Donate
@@ -605,7 +605,7 @@ export default function App() {
               {!isLoggedIn && (
                 <button 
                   onClick={() => { setView('login'); setShowMobileMenu(false); }} 
-                  className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-all ${backgroundImage ? 'text-slate-900 hover:bg-white/20' : 'text-red-600 hover:bg-red-50'}`}
+                  className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-all drop-shadow-sm ${backgroundImage ? 'text-white hover:bg-white/20' : 'text-red-600 hover:bg-red-50'}`}
                 >
                   <Lock className="w-5 h-5" /> Login Admin
                 </button>
@@ -627,11 +627,11 @@ export default function App() {
               >
                 <div className={`p-8 rounded-2xl border shadow-lg transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200'}`}>
                   <div className="text-center mb-6">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 border transition-all ${backgroundImage ? 'bg-slate-900/10 border-white/10 text-slate-900' : 'bg-slate-100 border-slate-200 text-slate-400'}`}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 border transition-all ${backgroundImage ? 'bg-white/10 border-white/20 text-white' : 'bg-slate-100 border-slate-200 text-slate-400'}`}>
                       <Lock className="w-6 h-6" />
                     </div>
-                    <h2 className={`text-xl font-black uppercase tracking-tight ${backgroundImage ? 'text-slate-900' : 'text-slate-800'}`}>Admin Login</h2>
-                    <p className={`text-xs font-bold uppercase tracking-widest mt-2 ${backgroundImage ? 'text-slate-900/60' : 'text-slate-400'}`}>Authorization Protocol</p>
+                    <h2 className={`text-xl font-black uppercase tracking-tight drop-shadow-sm ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>Admin Login</h2>
+                    <p className={`text-xs font-bold uppercase tracking-widest mt-2 drop-shadow-sm ${backgroundImage ? 'text-white/80' : 'text-slate-400'}`}>Authorization Protocol</p>
                     {loginError && (
                       <motion.p 
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -694,14 +694,14 @@ export default function App() {
 
               {/* Breadcrumbs & Controls */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-2xl border shadow-sm grow transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200 text-slate-500'}`}>
-                  <FolderOpen className="w-4 h-4 text-red-500" />
-                  <span className={`hover:text-red-600 cursor-pointer ${backgroundImage ? 'text-slate-900/60' : ''}`} onClick={navigateToHome}>Listed App</span>
+                <div className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-2xl border shadow-sm grow transition-all duration-300 transform-gpu overflow-x-auto whitespace-nowrap scrollbar-hide ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20 text-white' : 'bg-white border-slate-200 text-slate-500'}`}>
+                  <FolderOpen className="w-4 h-4 text-red-500 shrink-0" />
+                  <span className={`hover:text-red-500 cursor-pointer transition-colors ${backgroundImage ? 'text-white/70 hover:text-white drop-shadow-sm' : ''}`} onClick={navigateToHome}>Listed App</span>
                   {folderStack.map((folder, i) => (
                     <React.Fragment key={folder.id}>
-                      <ChevronRight className={`w-4 h-4 ${backgroundImage ? 'text-slate-400' : 'text-slate-300'}`} />
+                      <ChevronRight className={`w-4 h-4 shrink-0 ${backgroundImage ? 'text-white/40' : 'text-slate-300'}`} />
                       <span 
-                        className={`cursor-pointer hover:text-red-600 transition-colors ${i === folderStack.length - 1 ? (backgroundImage ? 'text-slate-900 font-black' : 'text-slate-900 font-bold') : (backgroundImage ? 'text-slate-900/60' : '')}`}
+                        className={`cursor-pointer hover:text-red-500 transition-colors ${i === folderStack.length - 1 ? (backgroundImage ? 'text-white font-black drop-shadow-md' : 'text-slate-900 font-bold') : (backgroundImage ? 'text-white/70 hover:text-white drop-shadow-sm' : '')}`}
                         onClick={() => {
                           const newStack = folderStack.slice(0, i + 1);
                           setFolderStack(newStack);
@@ -745,11 +745,11 @@ export default function App() {
                       <MoreVertical className="w-5 h-5" />
                     </motion.button>
                     <div className={`absolute right-0 top-full mt-2 w-44 rounded-2xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[60] transform origin-top-right scale-95 group-hover:scale-100 p-1 border ${backgroundImage ? 'bg-white/40 backdrop-blur-sm border-white/30' : 'bg-white border-slate-200'}`}>
-                       <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-slate-900' : 'text-slate-600'}`} onClick={() => fetchFiles()}>
+                       <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white drop-shadow-sm' : 'text-slate-600'}`} onClick={() => fetchFiles()}>
                           <RefreshCw className="w-3.5 h-3.5 text-red-500" />
                           Force Sync
                        </button>
-                       <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-slate-900' : 'text-slate-600'}`} onClick={navigateToHome}>
+                       <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white drop-shadow-sm' : 'text-slate-600'}`} onClick={navigateToHome}>
                           <Home className="w-3.5 h-3.5 text-red-500" />
                           Terminal Home
                        </button>
@@ -763,13 +763,13 @@ export default function App() {
                 {/* Control Bar */}
                 <div className={`p-4 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all ${backgroundImage ? 'border-white/10' : 'border-slate-100'}`}>
                   <div className="relative flex-1 max-w-md">
-                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${backgroundImage ? 'text-slate-700' : 'text-slate-400'}`} />
+                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${backgroundImage ? 'text-white/60' : 'text-slate-400'}`} />
                     <input 
                       type="text" 
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search files..." 
-                      className={`pl-10 pr-4 py-2 border rounded-xl text-sm w-full outline-none transition-all font-bold ${backgroundImage ? 'bg-white/10 border-white/20 text-slate-900 placeholder-slate-700 focus:bg-white/20 focus:border-red-500/50' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/10 focus:border-red-500'}`}
+                      className={`pl-10 pr-4 py-2 border rounded-xl text-sm w-full outline-none transition-all font-bold ${backgroundImage ? 'bg-white/10 border-white/20 text-white placeholder-white/50 focus:bg-white/20 focus:border-red-400' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/10 focus:border-red-500'}`}
                     />
                   </div>
                   
@@ -777,7 +777,7 @@ export default function App() {
                     <div className="flex items-center gap-2">
                       <button 
                          onClick={() => setShowFolderInput(!showFolderInput)}
-                         className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all ${backgroundImage ? 'bg-white/20 hover:bg-white/30 border border-white/20 text-slate-900' : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'}`}
+                         className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all ${backgroundImage ? 'bg-white/20 hover:bg-white/30 border border-white/20 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'}`}
                       >
                          <FolderOpen className="w-3.5 h-3.5 text-amber-500" />
                          Directory
@@ -812,29 +812,29 @@ export default function App() {
                 )}
 
                 {/* File List Header */}
-                <div className={`grid grid-cols-[1fr_80px_120px_auto] px-6 py-2 text-[10px] font-bold uppercase tracking-widest border-b ${backgroundImage ? 'bg-white/30 text-slate-600 border-white/10' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                <div className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 px-6 py-2 text-[10px] font-bold uppercase tracking-widest border-b ${backgroundImage ? 'bg-white/30 text-white border-white/10 shadow-[0_2px_10px_rgba(0,0,0,0.1)]' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
                    <span>Name</span>
-                   <span className="text-center">Size</span>
-                   <span className="text-right">Date</span>
+                   <span className="hidden md:block text-center">Size</span>
+                   <span className="hidden md:block text-right">Date</span>
                    <span></span>
                 </div>
 
                 {/* List Content */}
-                <div className={`divide-y ${backgroundImage ? 'divide-white/5' : 'divide-slate-50'}`}>
+                <div className={`divide-y ${backgroundImage ? 'divide-white/10' : 'divide-slate-50'}`}>
                   {filteredFiles.map((file) => (
                     <div 
                       key={file.id}
-                      className={`grid grid-cols-[1fr_80px_120px_auto] items-center px-6 py-3.5 transition-colors group cursor-pointer ${backgroundImage ? 'hover:bg-white/40' : 'hover:bg-slate-50'}`}
+                      className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 items-center px-6 py-3.5 transition-colors group cursor-pointer ${backgroundImage ? 'hover:bg-white/20' : 'hover:bg-slate-50'}`}
                       onClick={() => file.type === 'folder' ? enterFolder(file) : fetchFile(file.id)}
                     >
-                       <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform ${file.type === 'folder' ? 'bg-amber-50 text-amber-500' : 'bg-red-50 text-red-500'}`}>
+                       <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm ${file.type === 'folder' ? (backgroundImage ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-amber-50 text-amber-500') : (backgroundImage ? 'bg-red-400/20 text-red-300 border border-red-400/30' : 'bg-red-50 text-red-500')}`}>
                              {file.type === 'folder' ? <FolderOpen className="w-4 h-4" /> : <File className="w-4 h-4" />}
                           </div>
-                          <span className={`text-sm truncate transition-colors ${backgroundImage ? 'text-slate-900 font-bold group-hover:text-red-700' : 'text-slate-700 font-medium group-hover:text-red-600'}`}>{file.originalName}</span>
+                          <span style={{ wordBreak: 'break-word' }} className={`text-sm md:text-base font-bold transition-colors ${backgroundImage ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] group-hover:text-red-300' : 'text-slate-800 group-hover:text-red-600'}`}>{file.originalName}</span>
                        </div>
-                       <span className="text-center text-xs text-slate-500 font-medium">{file.type === 'folder' ? '-' : formatSize(file.size)}</span>
-                       <span className="text-right text-xs text-slate-400 font-medium">{new Date(file.uploadDate).toLocaleDateString()}</span>
+                       <span className={`hidden md:block text-center text-xs font-medium ${backgroundImage ? 'text-white/80' : 'text-slate-500'}`}>{file.type === 'folder' ? '-' : formatSize(file.size)}</span>
+                       <span className={`hidden md:block text-right text-xs font-medium ${backgroundImage ? 'text-white/60' : 'text-slate-400'}`}>{new Date(file.uploadDate).toLocaleDateString()}</span>
                        <div className="flex justify-end gap-1 relative">
                           <button 
                             onClick={(e) => {
@@ -894,15 +894,15 @@ export default function App() {
               <div className={`rounded-2xl shadow-lg overflow-hidden relative z-10 border transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200'}`}>
                 <div className="h-2 bg-red-600" />
                 <div className="p-8 md:p-12 text-center space-y-8">
-                  <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto transition-all border shadow-inner ${backgroundImage ? 'bg-slate-900/10 border-white/10 text-slate-900' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                  <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto transition-all border shadow-inner ${backgroundImage ? 'bg-white/10 border-white/20 text-white drop-shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
                     <File className="w-10 h-10" />
                   </div>
                   
                   <div className="space-y-4">
-                    <h1 className={`text-2xl font-black tracking-tighter uppercase break-all ${backgroundImage ? 'text-slate-900' : 'text-slate-800'}`}>{selectedFile?.originalName}</h1>
-                    <div className={`flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-widest ${backgroundImage ? 'text-slate-900/60' : 'text-slate-400'}`}>
+                    <h1 style={{ wordBreak: 'break-word' }} className={`text-2xl font-black tracking-tighter uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>{selectedFile?.originalName}</h1>
+                    <div className={`flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-widest ${backgroundImage ? 'text-white/70' : 'text-slate-400'}`}>
                       <span>{formatSize(selectedFile?.size || 0)}</span>
-                      <span className={`w-1.5 h-1.5 rounded-full ${backgroundImage ? 'bg-slate-900/20' : 'bg-slate-200'}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${backgroundImage ? 'bg-white/40' : 'bg-slate-200'}`} />
                       <span>Ready for Transmission</span>
                     </div>
                   </div>
@@ -917,7 +917,7 @@ export default function App() {
                     </a>
                     <button 
                       onClick={() => selectedFile && copyLink(selectedFile.id)}
-                      className={`w-full py-4 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all border text-xs ${backgroundImage ? 'bg-white/20 border-white/30 text-slate-900 hover:bg-white/30 shadow-lg shadow-black/5' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                      className={`w-full py-4 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all border text-xs ${backgroundImage ? 'bg-white/20 border-white/30 text-white hover:bg-white/30 shadow-lg shadow-black/5' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
                     >
                       <Share2 className="w-4 h-4" />
                       Copy Origin URL
@@ -933,7 +933,7 @@ export default function App() {
                     )}
                     <button 
                       onClick={navigateToHome}
-                      className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors py-2 ${backgroundImage ? 'text-slate-900/40 hover:text-slate-900' : 'text-slate-400 hover:text-slate-900'}`}
+                      className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors py-2 ${backgroundImage ? 'text-white/60 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}
                     >
                       Back to Matrix
                     </button>
