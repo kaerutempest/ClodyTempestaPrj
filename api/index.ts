@@ -56,6 +56,7 @@ interface FileMetadata {
   parentId: string | null;
   githubAssetId?: number;
   githubDownloadUrl?: string;
+  order?: number;
 }
 
 let filesMetadata: Record<string, FileMetadata> = {};
@@ -242,6 +243,73 @@ app.post('/api/upload', (req, res, next) => {
   });
 });
 
+app.post('/api/admin/sync-github', async (req, res) => {
+  if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
+  
+  const ghConf = await getGithubReleaseConfig();
+  if (!ghConf || !octokit) {
+      return res.status(400).json({ error: 'GitHub is not configured in .env' });
+  }
+
+  try {
+      const releaseResp = await octokit.rest.repos.getReleaseByTag({ 
+          owner: ghConf.owner, 
+          repo: ghConf.repo, 
+          tag: ghConf.tag 
+      });
+      
+      const { name: releaseName, assets } = releaseResp.data;
+
+      // 1. Check if folder already exists in root with this name
+      let folderId = Object.keys(filesMetadata).find(
+          id => filesMetadata[id].type === 'folder' && filesMetadata[id].originalName === (releaseName || ghConf.tag)
+      );
+
+      if (!folderId) {
+          folderId = crypto.randomBytes(8).toString('hex');
+          filesMetadata[folderId] = {
+              id: folderId,
+              originalName: releaseName || ghConf.tag,
+              size: 0,
+              mimeType: 'application/x-directory',
+              uploadDate: Date.now(),
+              type: 'folder',
+              parentId: null
+          };
+      }
+
+      // 2. Add all assets to this folder
+      let added = 0;
+      for (const asset of assets) {
+          // Check if it already exists to avoid duplicates
+          const exists = Object.values(filesMetadata).find(
+              f => f.parentId === folderId && f.originalName === asset.name
+          );
+          if (!exists) {
+              const fileId = crypto.randomBytes(8).toString('hex');
+              filesMetadata[fileId] = {
+                  id: fileId,
+                  originalName: asset.name,
+                  size: asset.size,
+                  mimeType: asset.content_type,
+                  uploadDate: Date.now(),
+                  type: 'file',
+                  parentId: folderId,
+                  githubAssetId: asset.id,
+                  githubDownloadUrl: asset.browser_download_url
+              };
+              added++;
+          }
+      }
+
+      saveMetadata();
+      res.json({ success: true, folderId, added, message: `Synced ${added} new files from GitHub Release.` });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Failed to sync from GitHub' });
+  }
+});
+
 app.post('/api/create-folder', (req, res) => {
   if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { name, parentId } = req.body;
@@ -320,6 +388,20 @@ app.delete('/api/delete/:id', async (req, res) => {
   }
 });
 
+app.post('/api/reorder', (req, res) => {
+  if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
+  const { reorderedIds } = req.body;
+  if (!Array.isArray(reorderedIds)) return res.status(400).json({ error: 'reorderedIds must be an array' });
+  
+  reorderedIds.forEach((id, index) => {
+    if (filesMetadata[id]) {
+        filesMetadata[id].order = index;
+    }
+  });
+  saveMetadata();
+  res.json({ success: true });
+});
+
 app.get('/api/files', (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   const { parentId } = req.query;
@@ -327,6 +409,9 @@ app.get('/api/files', (req, res) => {
   const list = Object.values(filesMetadata)
     .filter(f => f.parentId === pid)
     .sort((a, b) => {
+      if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+      if (a.order !== undefined) return -1;
+      if (b.order !== undefined) return 1;
       if (a.type === 'folder' && b.type !== 'folder') return -1;
       if (a.type !== 'folder' && b.type === 'folder') return 1;
       return b.uploadDate - a.uploadDate;

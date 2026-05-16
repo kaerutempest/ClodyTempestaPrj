@@ -24,7 +24,10 @@ import {
   Trash2,
   Archive,
   Edit2,
-  Wrench
+  Wrench,
+  ArrowUp,
+  ArrowDown,
+  Github
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -70,6 +73,7 @@ export default function App() {
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [isSyncingGithub, setIsSyncingGithub] = useState(false);
   const [loginError, setLoginError] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [folderStack, setFolderStack] = useState<FileMetadata[]>([]);
@@ -237,6 +241,29 @@ export default function App() {
     } catch (err) {
       console.error('Failed to fetch file', err);
       setView('home');
+    }
+  };
+
+  const syncGithub = async () => {
+    if (!isLoggedIn) return;
+    setIsSyncingGithub(true);
+    try {
+      const res = await fetch('/api/admin/sync-github', {
+        method: 'POST',
+        headers: { 'x-admin-password': adminPassword },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || 'Synced successfully from GitHub');
+        fetchFiles(currentFolderId);
+      } else {
+        alert(data.error || 'Failed to sync from GitHub');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error syncing from GitHub');
+    } finally {
+      setIsSyncingGithub(false);
     }
   };
 
@@ -475,6 +502,43 @@ export default function App() {
     }
   };
 
+  const moveFile = async (e: React.MouseEvent, index: number, direction: 'up' | 'down') => {
+    e.stopPropagation();
+    if (!isLoggedIn) return;
+    
+    if (searchTerm) {
+      alert("Reordering is disabled while searching");
+      return;
+    }
+
+    const newFiles = [...files];
+    if (direction === 'up' && index > 0) {
+      [newFiles[index - 1], newFiles[index]] = [newFiles[index], newFiles[index - 1]];
+    } else if (direction === 'down' && index < newFiles.length - 1) {
+      [newFiles[index], newFiles[index + 1]] = [newFiles[index + 1], newFiles[index]];
+    } else {
+      return;
+    }
+
+    setFiles(newFiles);
+
+    const reorderedIds = newFiles.map(f => f.id);
+    try {
+      const res = await fetch('/api/reorder', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-password': adminPassword 
+        },
+        body: JSON.stringify({ reorderedIds }),
+      });
+      if (!res.ok) throw new Error("Reorder failed");
+    } catch (err) {
+      console.error(err);
+      fetchFiles();
+    }
+  };
+
   const deleteItem = async (id: string, name: string) => {
     if (!isLoggedIn) return;
     if (!confirm(`Are you sure you want to delete "${name}"? If it's a folder, everything inside will be deleted.`)) return;
@@ -629,6 +693,18 @@ export default function App() {
                       >
                         <Wrench className="w-3.5 h-3.5" />
                         {maintenanceMode ? 'Maintenance Mode: ON' : 'Maintenance Mode: OFF'}
+                      </button>
+
+                      <button 
+                        className="w-full text-left px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-500/10 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                        onClick={() => {
+                          setShowAdminMenu(false);
+                          syncGithub();
+                        }}
+                        disabled={isSyncingGithub}
+                      >
+                        <Github className="w-3.5 h-3.5" />
+                        {isSyncingGithub ? 'Syncing...' : 'Sync from GitHub'}
                       </button>
 
                       <button 
@@ -938,13 +1014,31 @@ export default function App() {
 
                 {/* List Content */}
                 <div className={`divide-y ${backgroundImage ? 'divide-white/10' : 'divide-slate-50'}`}>
-                  {filteredFiles.map((file) => (
+                  {filteredFiles.map((file, index) => (
                     <div 
                       key={file.id}
                       className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 items-center px-6 py-3.5 transition-colors group cursor-pointer ${backgroundImage ? 'hover:bg-white/20' : 'hover:bg-slate-50'}`}
                       onClick={() => file.type === 'folder' ? enterFolder(file) : fetchFile(file.id)}
                     >
                        <div className="flex items-center gap-3 min-w-0 pr-2 grow">
+                          {isLoggedIn && !searchTerm && (
+                            <div className="flex flex-col gap-0 opacity-0 group-hover:opacity-100 transition-opacity justify-center shrink-0">
+                              <button
+                                onClick={(e) => moveFile(e, index, 'up')}
+                                disabled={index === 0}
+                                className={`p-0.5 rounded text-slate-400 hover:text-red-500 hover:bg-slate-200 disabled:opacity-30 disabled:hover:bg-transparent ${index === 0 ? 'invisible' : ''}`}
+                              >
+                                <ArrowUp className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={(e) => moveFile(e, index, 'down')}
+                                disabled={index === filteredFiles.length - 1}
+                                className={`p-0.5 rounded text-slate-400 hover:text-red-500 hover:bg-slate-200 disabled:opacity-30 disabled:hover:bg-transparent ${index === filteredFiles.length - 1 ? 'invisible' : ''}`}
+                              >
+                                <ArrowDown className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm ${file.type === 'folder' ? (backgroundImage ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-amber-50 text-amber-500') : (backgroundImage ? 'bg-red-400/20 text-red-300 border border-red-400/30' : 'bg-red-50 text-red-500')}`}>
                              {file.type === 'folder' ? <FolderOpen className="w-4 h-4" /> : <File className="w-4 h-4" />}
                           </div>
