@@ -69,6 +69,7 @@ export default function App() {
   });
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [loginError, setLoginError] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [folderStack, setFolderStack] = useState<FileMetadata[]>([]);
@@ -212,7 +213,8 @@ export default function App() {
 
   const fetchFiles = async (parentId: string | null = currentFolderId) => {
     try {
-      const url = parentId ? `/api/files?parentId=${parentId}` : '/api/files';
+      const ts = Date.now();
+      const url = parentId ? `/api/files?parentId=${parentId}&t=${ts}` : `/api/files?t=${ts}`;
       const res = await fetch(url);
       const data = await res.json();
       setFiles(data);
@@ -240,10 +242,12 @@ export default function App() {
 
   const handleFolderCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isCreatingFolder) return;
     const formData = new FormData(e.currentTarget);
     const name = formData.get('folderName') as string;
     if (!name) return;
 
+    setIsCreatingFolder(true);
     try {
       const res = await fetch('/api/create-folder', {
         method: 'POST',
@@ -255,13 +259,15 @@ export default function App() {
       });
       if (res.ok) {
         setShowFolderInput(false);
-        fetchFiles();
+        fetchFiles(currentFolderId);
       } else {
         const err = await res.json();
         alert(err.error || 'Failed to create folder');
       }
     } catch (err) {
       console.error('Failed to create folder', err);
+    } finally {
+      setIsCreatingFolder(false);
     }
   };
 
@@ -914,9 +920,10 @@ export default function App() {
                         placeholder="Folder Name"
                         className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-red-500"
                         autoFocus
+                        disabled={isCreatingFolder}
                        />
-                       <button type="submit" className="px-4 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold">Create</button>
-                       <button type="button" onClick={() => setShowFolderInput(false)} className="px-4 py-1.5 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold">Cancel</button>
+                       <button type="submit" disabled={isCreatingFolder} className="px-4 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold disabled:opacity-50">Create</button>
+                       <button type="button" disabled={isCreatingFolder} onClick={() => setShowFolderInput(false)} className="px-4 py-1.5 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold disabled:opacity-50">Cancel</button>
                     </form>
                   </div>
                 )}

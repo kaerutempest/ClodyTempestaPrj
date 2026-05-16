@@ -203,13 +203,29 @@ app.post('/api/upload', (req, res, next) => {
         
         const fileData = fs.readFileSync(req.file.path);
         
-        const assetResp = await octokit.rest.repos.uploadReleaseAsset({
-          owner,
-          repo,
-          release_id: releaseId,
-          name: `${id}${ext}`,
-          data: fileData as unknown as string,
-        });
+        let assetResp;
+        try {
+          assetResp = await octokit.rest.repos.uploadReleaseAsset({
+            owner,
+            repo,
+            release_id: releaseId,
+            name: req.file.originalname,
+            data: fileData as unknown as string,
+          });
+        } catch (e: any) {
+          if (e.status === 422) {
+             const fallbackName = `${id}_${req.file.originalname.replace(/ /g, '_')}`;
+             assetResp = await octokit.rest.repos.uploadReleaseAsset({
+               owner,
+               repo,
+               release_id: releaseId,
+               name: fallbackName,
+               data: fileData as unknown as string,
+             });
+          } else {
+             throw e;
+          }
+        }
 
         metadata.githubAssetId = assetResp.data.id;
         metadata.githubDownloadUrl = assetResp.data.browser_download_url;
