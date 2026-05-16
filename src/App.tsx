@@ -89,12 +89,8 @@ export default function App() {
     try {
       const res = await fetch('/api/settings');
       const data = await res.json();
-      if (data.backgroundImage !== undefined) {
-        setBackgroundImage(data.backgroundImage);
-      }
-      if (data.maintenanceMode !== undefined) {
-        setMaintenanceMode(data.maintenanceMode);
-      }
+      setBackgroundImage(data.backgroundImage || '');
+      setMaintenanceMode(!!data.maintenanceMode);
     } catch (err) {
       console.error('Failed to fetch settings', err);
     }
@@ -102,6 +98,8 @@ export default function App() {
 
   useEffect(() => {
     fetchSettings();
+    const interval = setInterval(fetchSettings, 30000); // Check every 30s
+    return () => clearInterval(interval);
   }, []);
 
   // Close menus when clicking outside

@@ -96,7 +96,10 @@ const isAdmin = (req: express.Request) => {
 
 // --- API Routes ---
 
-app.get('/api/settings', (req, res) => res.json(settings));
+app.get('/api/settings', (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.json(settings);
+});
 
 app.post('/api/settings/background', (req, res, next) => {
   if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
