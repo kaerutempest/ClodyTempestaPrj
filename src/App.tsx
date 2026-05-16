@@ -23,7 +23,8 @@ import {
   X,
   Trash2,
   Archive,
-  Edit2
+  Edit2,
+  Wrench
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -42,6 +43,7 @@ export default function App() {
 
   const [files, setFiles] = useState<FileMetadata[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
   const [view, setView] = useState<'home' | 'download' | 'login'>('home');
@@ -74,6 +76,7 @@ export default function App() {
   const [renamingFileId, setRenamingFileId] = useState<string | null>(null);
   const [renameInput, setRenameInput] = useState('');
   const [backgroundImage, setBackgroundImage] = useState('');
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [uploadingBg, setUploadingBg] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -86,8 +89,11 @@ export default function App() {
     try {
       const res = await fetch('/api/settings');
       const data = await res.json();
-      if (data.backgroundImage) {
+      if (data.backgroundImage !== undefined) {
         setBackgroundImage(data.backgroundImage);
+      }
+      if (data.maintenanceMode !== undefined) {
+        setMaintenanceMode(data.maintenanceMode);
       }
     } catch (err) {
       console.error('Failed to fetch settings', err);
@@ -296,6 +302,7 @@ export default function App() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       uploadFile(e.target.files[0]);
+      e.target.value = '';
     }
   };
 
@@ -305,6 +312,7 @@ export default function App() {
       return;
     }
 
+    setUploadingFile(file);
     setUploading(true);
     setUploadProgress(10);
     
@@ -331,15 +339,18 @@ export default function App() {
       if (res.ok) {
         setUploading(false);
         setUploadProgress(0);
+        setUploadingFile(null);
         fetchFiles();
       } else {
         const err = await res.json();
         alert(err.error || 'Upload failed');
         setUploading(false);
+        setUploadingFile(null);
       }
     } catch (err) {
       console.error('Upload failed', err);
       setUploading(false);
+      setUploadingFile(null);
     }
   };
 
@@ -394,6 +405,25 @@ export default function App() {
       }
     } catch (err) {
       console.error('Failed to reset background', err);
+    }
+  };
+
+  const toggleMaintenance = async () => {
+    if (!isLoggedIn) return;
+    try {
+      const res = await fetch('/api/settings/maintenance', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-password': adminPassword 
+        },
+        body: JSON.stringify({ enabled: !maintenanceMode })
+      });
+      if (res.ok) {
+        setMaintenanceMode(!maintenanceMode);
+      }
+    } catch (err) {
+      console.error('Toggle maintenance failed', err);
     }
   };
 
@@ -465,7 +495,7 @@ export default function App() {
   );
 
   return (
-    <div className={`min-h-[100dvh] transition-colors duration-500 w-full relative overflow-x-hidden ${backgroundImage ? 'bg-slate-900/10' : 'bg-slate-50'} text-slate-900 font-sans selection:bg-red-100 selection:text-red-900`}>
+    <div className={`min-h-screen transition-colors duration-500 w-full relative overflow-x-hidden ${backgroundImage ? 'bg-slate-900/10' : 'bg-slate-50'} text-slate-900 font-sans selection:bg-red-100 selection:text-red-900`}>
       {/* Background Layer */}
       <AnimatePresence>
         {backgroundImage && (
@@ -473,12 +503,13 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed top-0 left-0 w-full h-[100dvh] z-0 pointer-events-none"
+            className="fixed inset-0 z-0 pointer-events-none"
             style={{ 
               backgroundImage: `url(${backgroundImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
+              backgroundAttachment: 'fixed',
               transform: 'translateZ(0)',
               willChange: 'transform'
             }}
@@ -569,6 +600,17 @@ export default function App() {
                       </div>
                       
                       <button 
+                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${maintenanceMode ? 'text-amber-500 hover:bg-amber-500/10' : 'text-slate-500 hover:bg-slate-500/10'}`}
+                        onClick={() => {
+                          setShowAdminMenu(false);
+                          toggleMaintenance();
+                        }}
+                      >
+                        <Wrench className="w-3.5 h-3.5" />
+                        {maintenanceMode ? 'Maintenance Mode: ON' : 'Maintenance Mode: OFF'}
+                      </button>
+
+                      <button 
                         className="w-full text-left px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-500/10 rounded-lg transition-colors flex items-center gap-2"
                         onClick={() => {
                           setAdminPassword('');
@@ -632,12 +674,19 @@ export default function App() {
               >
                 <Heart className="w-5 h-5 text-pink-500" /> Support/Donate
               </a>
-              {!isLoggedIn && (
+              {!isLoggedIn ? (
                 <button 
                   onClick={() => { setView('login'); setShowMobileMenu(false); }} 
                   className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-all drop-shadow-sm ${backgroundImage ? 'text-white hover:bg-white/20' : 'text-red-600 hover:bg-red-50'}`}
                 >
                   <Lock className="w-5 h-5" /> Login Admin
+                </button>
+              ) : (
+                <button 
+                  onClick={() => { toggleMaintenance(); setShowMobileMenu(false); }} 
+                  className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-all drop-shadow-sm ${maintenanceMode ? 'text-amber-500 hover:bg-amber-500/10' : (backgroundImage ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50')}`}
+                >
+                  <Wrench className="w-5 h-5" /> {maintenanceMode ? 'Maintenance: ON' : 'Maintenance: OFF'}
                 </button>
               )}
             </div>
@@ -698,6 +747,22 @@ export default function App() {
                       Cancel
                     </button>
                   </form>
+                </div>
+              </motion.div>
+          ) : maintenanceMode && !isLoggedIn ? (
+              <motion.div
+                key="maintenance"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                className="max-w-lg mx-auto pt-20"
+              >
+                <div className={`p-10 rounded-2xl border shadow-lg text-center transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200'}`}>
+                  <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 border transition-all ${backgroundImage ? 'bg-white/10 border-white/20 text-white' : 'bg-amber-50 border-amber-100 text-amber-500'}`}>
+                    <Wrench className="w-10 h-10" />
+                  </div>
+                  <h2 className={`text-2xl font-black uppercase tracking-tight drop-shadow-sm mb-4 ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>Under Maintenance</h2>
+                  <p className={`text-sm font-bold uppercase tracking-widest mx-auto max-w-sm ${backgroundImage ? 'text-white/80' : 'text-slate-500'}`}>Cloud node is offline for upgrades. Please check back later.</p>
                 </div>
               </motion.div>
           ) : view === 'home' ? (
@@ -890,44 +955,46 @@ export default function App() {
                        </div>
                        <span className={`hidden md:block text-center text-xs font-medium ${backgroundImage ? 'text-white/80 drop-shadow-sm' : 'text-slate-500'}`}>{file.type === 'folder' ? '-' : formatSize(file.size)}</span>
                        <span className={`hidden md:block text-right text-xs font-medium ${backgroundImage ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>{new Date(file.uploadDate).toLocaleDateString()}</span>
-                       <div className="flex justify-end gap-1 relative shrink-0">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              copyLink(file.id);
-                            }}
-                            className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-500/5 transition-all"
-                            title="Copy Link"
-                          >
-                            <Share2 className="w-4 h-4" />
-                          </button>
-                          
-                          {isLoggedIn && (
-                            <>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setRenamingFileId(file.id);
-                                  setRenameInput(file.originalName);
-                                }}
-                                className="p-1.5 rounded-lg text-blue-400 hover:text-white hover:bg-blue-500 transition-all md:opacity-0 md:group-hover:opacity-100 opacity-100"
-                                title="Rename Resource"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteItem(file.id, file.originalName);
-                                }}
-                                className="p-1.5 rounded-lg text-red-500 hover:text-white hover:bg-red-500 transition-all md:opacity-0 md:group-hover:opacity-100 opacity-100"
-                                title="Delete Resource"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </>
-                          )}
-                       </div>
+                       {renamingFileId !== file.id && (
+                         <div className="flex justify-end gap-1 relative shrink-0">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyLink(file.id);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-500/5 transition-all"
+                              title="Copy Link"
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </button>
+                            
+                            {isLoggedIn && (
+                              <>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRenamingFileId(file.id);
+                                    setRenameInput(file.originalName);
+                                  }}
+                                  className="p-1.5 rounded-lg text-blue-400 hover:text-white hover:bg-blue-500 transition-all md:opacity-0 md:group-hover:opacity-100 opacity-100"
+                                  title="Rename Resource"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteItem(file.id, file.originalName);
+                                  }}
+                                  className="p-1.5 rounded-lg text-red-500 hover:text-white hover:bg-red-500 transition-all md:opacity-0 md:group-hover:opacity-100 opacity-100"
+                                  title="Delete Resource"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
+                         </div>
+                       )}
                     </div>
                   ))}
                   {filteredFiles.length === 0 && !uploading && (
@@ -938,14 +1005,27 @@ export default function App() {
                   )}
                   {uploading && (
                     <div className="p-10 flex flex-col items-center justify-center space-y-4">
-                       <div className="w-full max-w-xs h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                       <div className="text-center space-y-1 mb-2">
+                         {uploadingFile && (
+                           <>
+                             <div style={{ wordBreak: 'break-word' }} className={`text-base font-bold ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>
+                               {uploadingFile.name}
+                             </div>
+                             <div className={`flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest ${backgroundImage ? 'text-white/60' : 'text-slate-400'}`}>
+                               <span>{formatSize(uploadingFile.size)}</span>
+                               <span>{new Date().toLocaleDateString()}</span>
+                             </div>
+                           </>
+                         )}
+                       </div>
+                       <div className="w-full max-w-xs h-1.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
                           <motion.div 
                             className="bg-red-600 h-full"
                             initial={{ width: 0 }}
                             animate={{ width: `${uploadProgress}%` }}
                           />
                        </div>
-                       <p className="text-[10px] font-black uppercase text-red-600 tracking-widest animate-pulse">Streaming to cloud node...</p>
+                       <p className="text-[10px] font-black uppercase text-red-600 tracking-widest animate-pulse drop-shadow-sm">Streaming to cloud node...</p>
                     </div>
                   )}
                 </div>
@@ -970,17 +1050,19 @@ export default function App() {
                     {renamingFileId === selectedFile?.id && selectedFile ? (
                         <form 
                           onSubmit={(e) => handleRename(e, selectedFile.id)} 
-                          className="flex gap-2 w-full mt-2 mb-2 justify-center"
+                          className="flex flex-wrap sm:flex-nowrap gap-2 w-full mt-2 mb-2 justify-center max-w-md mx-auto"
                         >
                           <input 
                             type="text"
                             value={renameInput}
                             onChange={(e) => setRenameInput(e.target.value)}
-                            className={`px-3 py-1.5 border rounded-lg text-lg font-black outline-none ${backgroundImage ? 'bg-white/20 border-white/30 text-white placeholder-white/50 focus:border-red-400 focus:bg-white/30' : 'bg-white border-slate-200 text-slate-800 focus:border-red-500'}`}
+                            className={`flex-1 w-full min-w-[200px] px-3 py-1.5 border rounded-lg text-lg font-black outline-none ${backgroundImage ? 'bg-white/20 border-white/30 text-white placeholder-white/50 focus:border-red-400 focus:bg-white/30' : 'bg-white border-slate-200 text-slate-800 focus:border-red-500'}`}
                             autoFocus
                           />
-                          <button type="submit" className="px-4 py-1.5 bg-red-600/90 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors">Save</button>
-                          <button type="button" onClick={() => setRenamingFileId(null)} className="px-4 py-1.5 bg-slate-500/90 text-white rounded-lg text-sm font-bold hover:bg-slate-600 transition-colors">Cancel</button>
+                          <div className="flex gap-2 w-full justify-center sm:w-auto">
+                            <button type="submit" className="px-4 py-1.5 bg-red-600/90 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors">Save</button>
+                            <button type="button" onClick={() => setRenamingFileId(null)} className="px-4 py-1.5 bg-slate-500/90 text-white rounded-lg text-sm font-bold hover:bg-slate-600 transition-colors">Cancel</button>
+                          </div>
                         </form>
                     ) : (
                         <h1 style={{ wordBreak: 'break-word' }} className={`text-2xl font-black tracking-tighter uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] flex flex-wrap items-center justify-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>

@@ -46,7 +46,7 @@ interface FileMetadata {
 }
 
 let filesMetadata: Record<string, FileMetadata> = {};
-let settings = { backgroundImage: '' };
+let settings: { backgroundImage: string; maintenanceMode?: boolean } = { backgroundImage: '' };
 
 const loadData = () => {
   if (fs.existsSync(metadataFilePath)) {
@@ -62,7 +62,7 @@ const loadData = () => {
   if (fs.existsSync(settingsFilePath)) {
     try {
       settings = JSON.parse(fs.readFileSync(settingsFilePath, 'utf-8'));
-    } catch (e) { settings = { backgroundImage: '' }; }
+    } catch (e) { settings = { backgroundImage: '', maintenanceMode: false }; }
   }
 };
 
@@ -121,6 +121,14 @@ app.post('/api/settings/reset-background', (req, res) => {
   settings.backgroundImage = '';
   saveSettings();
   res.json({ success: true });
+});
+
+app.post('/api/settings/maintenance', (req, res) => {
+  if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
+  const { enabled } = req.body;
+  settings.maintenanceMode = !!enabled;
+  saveSettings();
+  res.json({ success: true, maintenanceMode: settings.maintenanceMode });
 });
 
 app.post('/api/admin/verify', (req, res) => {
