@@ -4,8 +4,21 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import { Octokit } from "@octokit/core";
+import { restEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";
+import { paginateRest } from "@octokit/plugin-paginate-rest";
 
 dotenv.config();
+
+const MyOctokit = Octokit.plugin(restEndpointMethods, paginateRest);
+const octokit = process.env.GITHUB_TOKEN ? new MyOctokit({ auth: process.env.GITHUB_TOKEN }) : null;
+
+async function getGithubReleaseConfig() {
+  if (!octokit || !process.env.GITHUB_REPO || !process.env.GITHUB_RELEASE_TAG) return null;
+  const parts = process.env.GITHUB_REPO.split('/');
+  if (parts.length !== 2) return null;
+  return { owner: parts[0], repo: parts[1], tag: process.env.GITHUB_RELEASE_TAG };
+}
 
 const __dirname = path.resolve();
 
@@ -20,8 +33,7 @@ const ADMIN_PASSWORD = getAdminPassword();
 const app = express();
 
 // Ensure uploads directory exists for local/container dev
-// Note: On Vercel, this is read-only unless using /tmp.
-const uploadDir = process.env.VERCEL ? '/tmp' : path.join(process.cwd(), '.data', 'uploads');
+const uploadDir = path.join(process.cwd(), '.data', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   try {
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -31,9 +43,8 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // Metadata/Settings paths
-// On Vercel, these won't persist across restarts, but it's better than crashing.
-const metadataFilePath = process.env.VERCEL ? '/tmp/metadata.json_db' : path.join(process.cwd(), '.data', 'metadata.json_db');
-const settingsFilePath = process.env.VERCEL ? '/tmp/settings.json_db' : path.join(process.cwd(), '.data', 'settings.json_db');
+const metadataFilePath = path.join(process.cwd(), '.data', 'metadata.json_db');
+const settingsFilePath = path.join(process.cwd(), '.data', 'settings.json_db');
 
 interface FileMetadata {
   id: string;
@@ -43,6 +54,8 @@ interface FileMetadata {
   uploadDate: number;
   type: 'file' | 'folder';
   parentId: string | null;
+  githubAssetId?: number;
+  githubDownloadUrl?: string;
 }
 
 let filesMetadata: Record<string, FileMetadata> = {};
@@ -68,8 +81,16 @@ const loadData = () => {
 
 loadData();
 
-const saveMetadata = () => fs.writeFileSync(metadataFilePath, JSON.stringify(filesMetadata));
-const saveSettings = () => fs.writeFileSync(settingsFilePath, JSON.stringify(settings));
+const saveMetadata = () => {
+  const tmpPath = metadataFilePath + '.tmp';
+  fs.writeFileSync(tmpPath, JSON.stringify(filesMetadata));
+  fs.renameSync(tmpPath, metadataFilePath);
+};
+const saveSettings = () => {
+  const tmpPath = settingsFilePath + '.tmp';
+  fs.writeFileSync(tmpPath, JSON.stringify(settings));
+  fs.renameSync(tmpPath, settingsFilePath);
+};
 
 // Multer config
 const storage = multer.diskStorage({
@@ -152,19 +173,57 @@ app.post('/api/admin/verify', (req, res) => {
 
 app.post('/api/upload', (req, res, next) => {
   if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
-  next();
-}, upload.single('file'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const { parentId } = req.body;
-  const id = path.parse(req.file.filename).name;
-  const metadata: FileMetadata = {
-    id, originalName: req.file.originalname, size: req.file.size,
-    mimeType: req.file.mimetype, uploadDate: Date.now(),
-    type: 'file', parentId: parentId || null
-  };
-  filesMetadata[id] = metadata;
-  saveMetadata();
-  res.json({ success: true, file: metadata, url: `/download/${id}` });
+  
+  upload.single('file')(req, res, async (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ error: 'File is too large to upload. Maximum size is 500MB.' });
+      }
+      return res.status(400).json({ error: err.message || 'Upload failed' });
+    }
+    
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    
+    const { parentId } = req.body;
+    const ext = path.extname(req.file.originalname);
+    const id = path.parse(req.file.filename).name;
+    const metadata: FileMetadata = {
+      id, originalName: req.file.originalname, size: req.file.size,
+      mimeType: req.file.mimetype, uploadDate: Date.now(),
+      type: 'file', parentId: parentId || null
+    };
+
+    // Attempt GitHub upload
+    const ghConf = await getGithubReleaseConfig();
+    if (ghConf && octokit) {
+      try {
+        const { owner, repo, tag } = ghConf;
+        const releaseResp = await octokit.rest.repos.getReleaseByTag({ owner, repo, tag });
+        const releaseId = releaseResp.data.id;
+        
+        const fileData = fs.readFileSync(req.file.path);
+        
+        const assetResp = await octokit.rest.repos.uploadReleaseAsset({
+          owner,
+          repo,
+          release_id: releaseId,
+          name: `${id}${ext}`,
+          data: fileData as unknown as string,
+        });
+
+        metadata.githubAssetId = assetResp.data.id;
+        metadata.githubDownloadUrl = assetResp.data.browser_download_url;
+        
+        fs.unlinkSync(req.file.path); // remove local fallback
+      } catch (ghErr) {
+        console.error('GitHub uploading failed, keeping local file:', ghErr);
+      }
+    }
+
+    filesMetadata[id] = metadata;
+    saveMetadata();
+    res.json({ success: true, file: metadata, url: `/download/${id}` });
+  });
 });
 
 app.post('/api/create-folder', (req, res) => {
@@ -194,33 +253,53 @@ app.post('/api/rename', (req, res) => {
   res.json({ success: true, item: metadata });
 });
 
-app.delete('/api/delete/:id', (req, res) => {
+app.delete('/api/delete/:id', async (req, res) => {
   if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { id } = req.params;
   const metadata = filesMetadata[id];
   if (!metadata) return res.status(404).json({ error: 'Not found' });
-  const deleteItem = (itemId: string) => {
+  
+  const deleteItem = async (itemId: string) => {
     const item = filesMetadata[itemId];
     if (!item) return;
     if (item.type === 'folder') {
       const children = Object.values(filesMetadata).filter(f => f.parentId === itemId);
-      children.forEach(child => deleteItem(child.id));
+      for (const child of children) {
+          await deleteItem(child.id);
+      }
       delete filesMetadata[itemId];
     } else {
-      const files = fs.readdirSync(uploadDir);
-      const actualFile = files.find(f => f.startsWith(itemId));
-      if (actualFile) {
-        const filePath = path.join(uploadDir, actualFile);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      if (item.githubAssetId && octokit) {
+          try {
+              const ghConf = await getGithubReleaseConfig();
+              if (ghConf) {
+                  await octokit.rest.repos.deleteReleaseAsset({
+                      owner: ghConf.owner,
+                      repo: ghConf.repo,
+                      asset_id: item.githubAssetId
+                  });
+              }
+          } catch (e) {
+              console.error('Failed to delete GitHub asset', e);
+          }
+      } else {
+          const files = fs.readdirSync(uploadDir);
+          const actualFile = files.find(f => f.startsWith(itemId));
+          if (actualFile) {
+            const filePath = path.join(uploadDir, actualFile);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+          }
       }
       delete filesMetadata[itemId];
     }
   };
+
   try {
-    deleteItem(id);
+    await deleteItem(id);
     saveMetadata();
     res.json({ success: true });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Delete failed' });
   }
 });
@@ -249,6 +328,11 @@ app.get('/download/:id', (req, res) => {
   const id = req.params.id;
   const metadata = filesMetadata[id];
   if (!metadata) return res.status(404).send('File not found');
+  
+  if (metadata.githubDownloadUrl) {
+    return res.redirect(metadata.githubDownloadUrl);
+  }
+
   const files = fs.readdirSync(uploadDir);
   const actualFile = files.find(f => f.startsWith(id));
   if (!actualFile) return res.status(404).send('File missing on disk');
