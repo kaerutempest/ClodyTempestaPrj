@@ -21,7 +21,7 @@ const app = express();
 
 // Ensure uploads directory exists for local/container dev
 // Note: On Vercel, this is read-only unless using /tmp.
-const uploadDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, 'uploads');
+const uploadDir = process.env.VERCEL ? '/tmp' : path.join(process.cwd(), '.data', 'uploads');
 if (!fs.existsSync(uploadDir)) {
   try {
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -32,8 +32,8 @@ if (!fs.existsSync(uploadDir)) {
 
 // Metadata/Settings paths
 // On Vercel, these won't persist across restarts, but it's better than crashing.
-const metadataFilePath = process.env.VERCEL ? '/tmp/metadata.json_db' : path.join(__dirname, 'metadata.json_db');
-const settingsFilePath = process.env.VERCEL ? '/tmp/settings.json_db' : path.join(__dirname, 'settings.json_db');
+const metadataFilePath = process.env.VERCEL ? '/tmp/metadata.json_db' : path.join(process.cwd(), '.data', 'metadata.json_db');
+const settingsFilePath = process.env.VERCEL ? '/tmp/settings.json_db' : path.join(process.cwd(), '.data', 'settings.json_db');
 
 interface FileMetadata {
   id: string;
@@ -80,9 +80,13 @@ const storage = multer.diskStorage({
     cb(null, `${uniqueId}${ext}`);
   },
 });
-const upload = multer({ storage });
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 500 * 1024 * 1024 } // 500MB limit
+});
 
-app.use(express.json());
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
 const clean = (str: any) => (str || '').toString().trim().replace(/[\u200B-\u200D\uFEFF\s]/g, '');
 
@@ -222,6 +226,7 @@ app.delete('/api/delete/:id', (req, res) => {
 });
 
 app.get('/api/files', (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   const { parentId } = req.query;
   const pid = parentId === 'null' || !parentId ? null : parentId as string;
   const list = Object.values(filesMetadata)

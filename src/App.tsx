@@ -310,6 +310,11 @@ export default function App() {
       return;
     }
 
+    if (file.size > 500 * 1024 * 1024) {
+      alert('File is too large! Maximum size is 500MB.');
+      return;
+    }
+
     setUploadingFile(file);
     setUploading(true);
     setUploadProgress(10);
@@ -340,13 +345,25 @@ export default function App() {
         setUploadingFile(null);
         fetchFiles();
       } else {
-        const err = await res.json();
-        alert(err.error || 'Upload failed');
+        let errMsg = 'Upload failed';
+        try {
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const err = await res.json();
+            errMsg = err.error || errMsg;
+          } else if (res.status === 413) {
+            errMsg = 'File is too large to upload.';
+          } else {
+            errMsg = `Error: ${res.status} ${res.statusText}`;
+          }
+        } catch (e) {}
+        alert(errMsg);
         setUploading(false);
         setUploadingFile(null);
       }
     } catch (err) {
       console.error('Upload failed', err);
+      alert('Upload failed: ' + (err instanceof Error ? err.message : String(err)));
       setUploading(false);
       setUploadingFile(null);
     }
