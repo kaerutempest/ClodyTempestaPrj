@@ -73,7 +73,7 @@ interface FileMetadata {
 }
 
 let filesMetadata: Record<string, FileMetadata> = {};
-let settings: { backgroundImage: string; maintenanceMode?: boolean } = { backgroundImage: '' };
+let settings: { backgroundImage: string; maintenanceMode?: boolean; backgroundLocked?: boolean } = { backgroundImage: '' };
 
 const loadData = () => {
   if (fs.existsSync(metadataFilePath)) {
@@ -89,7 +89,7 @@ const loadData = () => {
   if (fs.existsSync(settingsFilePath)) {
     try {
       settings = JSON.parse(fs.readFileSync(settingsFilePath, 'utf-8'));
-    } catch (e) { settings = { backgroundImage: '', maintenanceMode: false }; }
+    } catch (e) { settings = { backgroundImage: '', maintenanceMode: false, backgroundLocked: false }; }
   }
 };
 
@@ -142,6 +142,7 @@ app.get('/api/settings', (req, res) => {
 
 app.post('/api/settings/background', (req, res, next) => {
   if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
+  if (settings.backgroundLocked) return res.status(403).json({ error: 'Background is locked' });
   next();
 }, upload.single('background'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
@@ -160,9 +161,17 @@ app.post('/api/settings/background', (req, res, next) => {
 
 app.post('/api/settings/reset-background', (req, res) => {
   if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
+  if (settings.backgroundLocked) return res.status(403).json({ error: 'Background is locked' });
   settings.backgroundImage = '';
   saveSettings();
   res.json({ success: true });
+});
+
+app.post('/api/settings/toggle-lock-background', (req, res) => {
+  if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
+  settings.backgroundLocked = !settings.backgroundLocked;
+  saveSettings();
+  res.json({ success: true, locked: settings.backgroundLocked });
 });
 
 app.post('/api/settings/maintenance', (req, res) => {

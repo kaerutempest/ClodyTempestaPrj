@@ -82,6 +82,7 @@ export default function App() {
   const [renameInput, setRenameInput] = useState('');
   const [backgroundImage, setBackgroundImage] = useState('');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [backgroundLocked, setBackgroundLocked] = useState(false);
   const [uploadingBg, setUploadingBg] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -96,6 +97,7 @@ export default function App() {
       const data = await res.json();
       setBackgroundImage(data.backgroundImage || '');
       setMaintenanceMode(!!data.maintenanceMode);
+      setBackgroundLocked(!!data.backgroundLocked);
     } catch (err) {
       console.error('Failed to fetch settings', err);
     }
@@ -432,7 +434,8 @@ export default function App() {
         const data = await res.json();
         setBackgroundImage(data.url);
       } else {
-        alert('Failed to upload background');
+        const err = await res.json();
+        alert(err.error || 'Failed to upload background');
       }
     } catch (err) {
       console.error('Failed to upload background', err);
@@ -450,9 +453,31 @@ export default function App() {
       });
       if (res.ok) {
         setBackgroundImage('');
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to reset background');
       }
     } catch (err) {
       console.error('Failed to reset background', err);
+    }
+  };
+
+  const toggleLockBackground = async () => {
+    if (!isLoggedIn) return;
+    try {
+      const res = await fetch('/api/settings/toggle-lock-background', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': adminPassword
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBackgroundLocked(data.locked);
+      }
+    } catch (err) {
+      console.error('Toggle lock background failed', err);
     }
   };
 
@@ -656,11 +681,13 @@ export default function App() {
                         Display Settings
                       </div>
                       <button 
-                        className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-white/20 rounded-lg transition-colors flex items-center gap-2"
+                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${backgroundLocked ? 'text-slate-400 opacity-50 cursor-not-allowed' : 'text-slate-700 hover:bg-white/20'}`}
                         onClick={() => {
+                          if (backgroundLocked) return;
                           setShowAdminMenu(false);
                           bgInputRef.current?.click();
                         }}
+                        disabled={backgroundLocked}
                       >
                         <Upload className="w-3.5 h-3.5 text-red-500" />
                         {uploadingBg ? 'Changing...' : 'Themes Background'}
@@ -668,16 +695,29 @@ export default function App() {
                       
                       {backgroundImage && (
                         <button 
-                          className="w-full text-left px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50/20 rounded-lg transition-colors flex items-center gap-2"
+                          className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${backgroundLocked ? 'text-slate-400 opacity-50 cursor-not-allowed' : 'text-red-600 hover:bg-red-50/20'}`}
                           onClick={() => {
+                            if (backgroundLocked) return;
                             setShowAdminMenu(false);
                             resetBackground();
                           }}
+                          disabled={backgroundLocked}
                         >
                           <AlertCircle className="w-3.5 h-3.5" />
                           Clear Background
                         </button>
                       )}
+
+                      <button 
+                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${backgroundLocked ? 'text-amber-500 hover:bg-amber-500/10' : 'text-slate-500 hover:bg-slate-500/10'}`}
+                        onClick={() => {
+                          setShowAdminMenu(false);
+                          toggleLockBackground();
+                        }}
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        {backgroundLocked ? 'Unlock Theme' : 'Lock Theme'}
+                      </button>
                       
                       <div className="h-px bg-slate-100/10 my-1" />
                       <div className="px-3 py-2 text-[10px] uppercase tracking-widest text-slate-400 font-bold border-b border-slate-50/10 mb-1">
