@@ -8,19 +8,32 @@ import { Octokit } from "@octokit/core";
 import { restEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";
 import { paginateRest } from "@octokit/plugin-paginate-rest";
 
-dotenv.config();
+const __dirname = path.resolve();
+
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const MyOctokit = Octokit.plugin(restEndpointMethods, paginateRest);
-const octokit = process.env.GITHUB_TOKEN ? new MyOctokit({ auth: process.env.GITHUB_TOKEN }) : null;
+
+let octokitInstance: InstanceType<typeof MyOctokit> | null = null;
+function getOctokit() {
+  if (!octokitInstance && process.env.GITHUB_TOKEN) {
+    octokitInstance = new MyOctokit({ auth: process.env.GITHUB_TOKEN });
+  }
+  return octokitInstance;
+}
 
 async function getGithubReleaseConfig() {
-  if (!octokit || !process.env.GITHUB_REPO || !process.env.GITHUB_RELEASE_TAG) return null;
+  // Try loading dotenv again just in case
+  dotenv.config({ path: path.join(__dirname, '.env') });
+  const octokit = getOctokit();
+  if (!octokit || !process.env.GITHUB_REPO || !process.env.GITHUB_RELEASE_TAG) {
+      console.log('GitHub config missing:', { token: !!process.env.GITHUB_TOKEN, repo: process.env.GITHUB_REPO, tag: process.env.GITHUB_RELEASE_TAG });
+      return null;
+  }
   const parts = process.env.GITHUB_REPO.split('/');
   if (parts.length !== 2) return null;
   return { owner: parts[0], repo: parts[1], tag: process.env.GITHUB_RELEASE_TAG };
 }
-
-const __dirname = path.resolve();
 
 const getAdminPassword = () => {
   const envPass = (process.env.VITE_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || '').trim();
@@ -196,6 +209,7 @@ app.post('/api/upload', (req, res, next) => {
 
     // Attempt GitHub upload
     const ghConf = await getGithubReleaseConfig();
+    const octokit = getOctokit();
     if (ghConf && octokit) {
       try {
         const { owner, repo, tag } = ghConf;
@@ -247,6 +261,7 @@ app.post('/api/admin/sync-github', async (req, res) => {
   if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
   
   const ghConf = await getGithubReleaseConfig();
+  const octokit = getOctokit();
   if (!ghConf || !octokit) {
       return res.status(400).json({ error: 'GitHub is not configured in .env' });
   }
@@ -353,6 +368,7 @@ app.delete('/api/delete/:id', async (req, res) => {
       }
       delete filesMetadata[itemId];
     } else {
+      const octokit = getOctokit();
       if (item.githubAssetId && octokit) {
           try {
               const ghConf = await getGithubReleaseConfig();
