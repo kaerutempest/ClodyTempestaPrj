@@ -610,12 +610,13 @@ export default function App() {
       <AnimatePresence>
         {backgroundImage && (
           <motion.div 
+            key={backgroundImage}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-0 pointer-events-none"
             style={{ 
-              backgroundImage: `url(${backgroundImage})`,
+              backgroundImage: `url("${backgroundImage}")`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
@@ -781,7 +782,12 @@ export default function App() {
               accept="image/jpeg,image/png,image/webp"
               ref={bgInputRef} 
               className="hidden" 
-              onChange={(e) => e.target.files?.[0] && uploadBackground(e.target.files[0])} 
+              onChange={(e) => {
+                if (e.target.files?.[0]) {
+                  uploadBackground(e.target.files[0]);
+                }
+                e.target.value = '';
+              }} 
             />
           </div>
         </div>
