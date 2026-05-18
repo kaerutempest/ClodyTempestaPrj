@@ -154,7 +154,7 @@ app.post('/api/settings/background', (req, res, next) => {
   };
   filesMetadata[id] = metadata;
   saveMetadata();
-  settings.backgroundImage = `/download/${id}`;
+  settings.backgroundImage = `/preview/${id}`;
   saveSettings();
   res.json({ success: true, url: settings.backgroundImage });
 });
@@ -463,6 +463,21 @@ app.get('/download/:id', (req, res) => {
   const actualFile = files.find(f => f.startsWith(id));
   if (!actualFile) return res.status(404).send('File missing on disk');
   res.download(path.join(uploadDir, actualFile), metadata.originalName);
+});
+
+app.get('/preview/:id', (req, res) => {
+  const id = req.params.id;
+  const metadata = filesMetadata[id];
+  if (!metadata) return res.status(404).send('File not found');
+  
+  if (metadata.githubDownloadUrl) {
+    return res.redirect(metadata.githubDownloadUrl);
+  }
+
+  const files = fs.readdirSync(uploadDir);
+  const actualFile = files.find(f => f.startsWith(id));
+  if (!actualFile) return res.status(404).send('File missing on disk');
+  res.sendFile(path.join(uploadDir, actualFile));
 });
 
 // --- Server Setup ---
