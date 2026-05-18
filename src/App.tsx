@@ -95,7 +95,7 @@ export default function App() {
     try {
       const res = await fetch('/api/settings');
       const data = await res.json();
-      setBackgroundImage(data.backgroundImage || '');
+      setBackgroundImage(data.backgroundImage || data.defaultBackground || '');
       setMaintenanceMode(!!data.maintenanceMode);
       setBackgroundLocked(!!data.backgroundLocked);
     } catch (err) {
@@ -452,7 +452,7 @@ export default function App() {
         headers: { 'x-admin-password': adminPassword },
       });
       if (res.ok) {
-        setBackgroundImage('');
+        fetchSettings();
       } else {
         const err = await res.json();
         alert(err.error || 'Failed to reset background');
@@ -605,7 +605,7 @@ export default function App() {
   );
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 w-full relative overflow-x-hidden ${backgroundImage ? 'bg-slate-900/10' : 'bg-slate-50'} text-slate-900 font-sans selection:bg-red-100 selection:text-red-900`}>
+    <div className={`min-h-screen transition-colors duration-500 w-full relative overflow-x-hidden ${backgroundImage ? 'bg-slate-900' : 'bg-slate-50'} text-slate-900 font-sans selection:bg-red-100 selection:text-red-900`}>
       {/* Background Layer */}
       <AnimatePresence>
         {backgroundImage && (

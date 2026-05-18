@@ -137,7 +137,27 @@ const isAdmin = (req: express.Request) => {
 
 app.get('/api/settings', (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  res.json(settings);
+  
+  let defaultBackground = '';
+  // Check root dir first
+  if (fs.existsSync(path.join(process.cwd(), 'background.jpg'))) {
+    defaultBackground = '/local-bg/background.jpg';
+  } else if (fs.existsSync(path.join(process.cwd(), 'background.png'))) {
+    defaultBackground = '/local-bg/background.png';
+  } else if (fs.existsSync(path.join(process.cwd(), 'background.webp'))) {
+    defaultBackground = '/local-bg/background.webp';
+  } else if (fs.existsSync(path.join(process.cwd(), 'public', 'background.jpg'))) {
+    defaultBackground = '/background.jpg';
+  } else if (fs.existsSync(path.join(process.cwd(), 'public', 'background.png'))) {
+    defaultBackground = '/background.png';
+  } else if (fs.existsSync(path.join(process.cwd(), 'public', 'background.webp'))) {
+    defaultBackground = '/background.webp';
+  }
+
+  res.json({
+    ...settings,
+    defaultBackground
+  });
 });
 
 app.post('/api/settings/background', (req, res, next) => {
@@ -478,6 +498,16 @@ app.get('/preview/:id', (req, res) => {
   const actualFile = files.find(f => f.startsWith(id));
   if (!actualFile) return res.status(404).send('File missing on disk');
   res.sendFile(path.join(uploadDir, actualFile));
+});
+
+app.get('/local-bg/:filename', (req, res) => {
+  const filename = req.params.filename;
+  if (!['background.jpg', 'background.png', 'background.webp'].includes(filename)) {
+    return res.status(403).send('Forbidden');
+  }
+  const filePath = path.join(process.cwd(), filename);
+  if (!fs.existsSync(filePath)) return res.status(404).send('Not found');
+  res.sendFile(filePath);
 });
 
 // --- Server Setup ---
