@@ -1018,7 +1018,7 @@ export default function App() {
                     <div 
                       key={file.id}
                       className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 items-center px-6 py-3.5 transition-colors group cursor-pointer ${backgroundImage ? 'hover:bg-white/20' : 'hover:bg-slate-50'}`}
-                      onClick={() => file.type === 'folder' ? enterFolder(file) : fetchFile(file.id)}
+                      onClick={() => file.type === 'folder' ? enterFolder(file) : window.location.href = `/download/${file.id}`}
                     >
                        <div className="flex items-center gap-3 min-w-0 pr-2 grow">
                           {isLoggedIn && !searchTerm && (
@@ -1073,6 +1073,18 @@ export default function App() {
                        <span className={`hidden md:block text-right text-xs font-medium ${backgroundImage ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>{new Date(file.uploadDate).toLocaleDateString()}</span>
                        {renamingFileId !== file.id && (
                          <div className="flex justify-end gap-1 relative shrink-0">
+                            {file.type !== 'folder' && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.location.href = `/download/${file.id}`;
+                                }}
+                                className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-500/5 transition-all"
+                                title="Download"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+                            )}
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1206,7 +1218,7 @@ export default function App() {
                       className="w-full py-4 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-xl shadow-red-600/30 active:scale-95 text-xs"
                     >
                       <Download className="w-5 h-5" />
-                      Begin Pipeline
+                      DOWNLOAD FILE
                     </a>
                     <button 
                       onClick={() => selectedFile && copyLink(selectedFile.id)}
