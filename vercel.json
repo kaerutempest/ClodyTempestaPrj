@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/**/*.ts": {
-      "includeFiles": "background.*"
+      "includeFiles": ["background.*", ".data/**"]
     }
   },
   "rewrites": [

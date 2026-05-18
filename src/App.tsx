@@ -444,6 +444,29 @@ export default function App() {
     }
   };
 
+  const handleBackgroundUrl = async (url: string) => {
+    if (!isLoggedIn) return;
+    try {
+      const res = await fetch('/api/settings/background-url', {
+        method: 'POST',
+        headers: { 
+          'x-admin-password': adminPassword,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ url })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBackgroundImage(data.url);
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to set background URL');
+      }
+    } catch (err) {
+      console.error('Failed to set background URL', err);
+    }
+  };
+
   const resetBackground = async () => {
     if (!isLoggedIn) return;
     try {
@@ -615,14 +638,17 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-0 pointer-events-none"
+            style={{ 
+              backgroundImage: `url("${backgroundImage}")`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundAttachment: 'fixed',
+              transform: 'translateZ(0)',
+              willChange: 'transform'
+            }}
           >
-            <img 
-              src={backgroundImage} 
-              alt="Background" 
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            {/* Dark overlay to ensure text readability */}
-            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px]" />
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -689,6 +715,22 @@ export default function App() {
                       >
                         <Upload className="w-3.5 h-3.5 text-red-500" />
                         {uploadingBg ? 'Changing...' : 'Themes Background'}
+                      </button>
+
+                      <button 
+                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${backgroundLocked ? 'text-slate-400 opacity-50 cursor-not-allowed' : 'text-slate-700 hover:bg-white/20'}`}
+                        onClick={() => {
+                          if (backgroundLocked) return;
+                          setShowAdminMenu(false);
+                          const url = prompt('Enter image URL for background (Imgur, Discord, etc):');
+                          if (url) {
+                            handleBackgroundUrl(url);
+                          }
+                        }}
+                        disabled={backgroundLocked}
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-blue-500" />
+                        Set Theme URL
                       </button>
                       
                       {backgroundImage && (

@@ -179,6 +179,16 @@ app.post('/api/settings/background', (req, res, next) => {
   res.json({ success: true, url: settings.backgroundImage });
 });
 
+app.post('/api/settings/background-url', (req, res) => {
+  if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
+  if (settings.backgroundLocked) return res.status(403).json({ error: 'Background is locked' });
+  const { url } = req.body;
+  if (typeof url !== 'string') return res.status(400).json({ error: 'Invalid URL' });
+  settings.backgroundImage = url;
+  saveSettings();
+  res.json({ success: true, url: settings.backgroundImage });
+});
+
 app.post('/api/settings/reset-background', (req, res) => {
   if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
   if (settings.backgroundLocked) return res.status(403).json({ error: 'Background is locked' });
