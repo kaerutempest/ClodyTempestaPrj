@@ -638,16 +638,13 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-0 pointer-events-none"
-            style={{ 
-              backgroundImage: `url("${backgroundImage}")`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-              backgroundAttachment: 'fixed',
-              transform: 'translateZ(0)',
-              willChange: 'transform'
-            }}
           >
+            <img 
+              src={backgroundImage} 
+              alt="Background" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* Dark overlay to ensure text readability */}
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" />
           </motion.div>
         )}

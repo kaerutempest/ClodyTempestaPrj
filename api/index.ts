@@ -45,8 +45,11 @@ const ADMIN_PASSWORD = getAdminPassword();
 
 const app = express();
 
+const isVercel = !!process.env.VERCEL;
+const dataDir = isVercel ? '/tmp/.data' : path.join(process.cwd(), '.data');
+
 // Ensure uploads directory exists for local/container dev
-const uploadDir = path.join(process.cwd(), '.data', 'uploads');
+const uploadDir = path.join(dataDir, 'uploads');
 if (!fs.existsSync(uploadDir)) {
   try {
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -56,8 +59,8 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // Metadata/Settings paths
-const metadataFilePath = path.join(process.cwd(), '.data', 'metadata.json_db');
-const settingsFilePath = path.join(process.cwd(), '.data', 'settings.json_db');
+const metadataFilePath = path.join(dataDir, 'metadata.json_db');
+const settingsFilePath = path.join(dataDir, 'settings.json_db');
 
 interface FileMetadata {
   id: string;
@@ -142,7 +145,7 @@ app.get('/api/settings', (req, res) => {
   
   // Check github synced files in metadata first
   const githubBg = Object.values(filesMetadata).find(f => 
-    f.type === 'file' && f.originalName && f.originalName.match(/^background\.(jpg|png|webp)$/i)
+    f.type === 'file' && f.originalName && f.originalName.match(/^background\.(jpg|jpeg|png|webp)$/i)
   );
   if (githubBg) {
     defaultBackground = `/preview/${githubBg.id}`;
@@ -519,7 +522,7 @@ app.get('/preview/:id', (req, res) => {
 
 app.get('/local-bg/:filename', (req, res) => {
   const filename = req.params.filename;
-  if (!['background.jpg', 'background.png', 'background.webp'].includes(filename)) {
+  if (!['background.jpg', 'background.jpeg', 'background.png', 'background.webp'].includes(filename.toLowerCase())) {
     return res.status(403).send('Forbidden');
   }
   const filePath = path.join(process.cwd(), filename);
