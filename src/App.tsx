@@ -801,14 +801,20 @@ export default function App() {
                       className={`absolute right-0 mt-2 w-48 border rounded-xl shadow-lg p-1 z-[60] overflow-hidden ${
                         lowSpecMode
                           ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200 text-slate-800')
-                          : (backgroundImage ? 'bg-white/40 backdrop-blur-sm border-white/30 text-white shadow-lg' : 'bg-white border-slate-200')
+                          : (backgroundImage ? 'bg-slate-950/90 backdrop-blur-md border border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200')
                       }`}
                     >
-                      <div className="px-3 py-2 text-[10px] uppercase tracking-widest text-slate-400 font-bold border-b border-slate-50/10 mb-1">
+                      <div className={`px-3 py-2 text-[10px] uppercase tracking-widest font-bold border-b mb-1 ${
+                        backgroundImage ? 'text-slate-400 border-white/10' : 'text-slate-400 border-slate-100'
+                      }`}>
                         Display Settings
                       </div>
                       <button 
-                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${backgroundLocked ? 'text-slate-400 opacity-50 cursor-not-allowed' : 'text-slate-700 hover:bg-white/20'}`}
+                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${
+                          backgroundLocked 
+                            ? 'text-slate-400 opacity-50 cursor-not-allowed' 
+                            : (backgroundImage ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-slate-700 hover:bg-slate-100')
+                        }`}
                         onClick={() => {
                           if (backgroundLocked) return;
                           setShowAdminMenu(false);
@@ -822,7 +828,11 @@ export default function App() {
 
                       {backgroundImage && (
                         <button 
-                          className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${backgroundLocked ? 'text-slate-400 opacity-50 cursor-not-allowed' : 'text-red-600 hover:bg-red-50/20'}`}
+                          className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${
+                            backgroundLocked 
+                              ? 'text-slate-400 opacity-50 cursor-not-allowed' 
+                              : (backgroundImage ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-red-650 hover:bg-slate-100')
+                          }`}
                           onClick={() => {
                             if (backgroundLocked) return;
                             setShowAdminMenu(false);
@@ -836,7 +846,11 @@ export default function App() {
                       )}
 
                       <button 
-                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${backgroundLocked ? 'text-amber-500 hover:bg-amber-500/10' : 'text-slate-500 hover:bg-slate-500/10'}`}
+                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${
+                          backgroundLocked 
+                            ? 'text-amber-500 hover:bg-amber-500/10' 
+                            : (backgroundImage ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:bg-slate-100')
+                        }`}
                         onClick={() => {
                           setShowAdminMenu(false);
                           toggleLockBackground();
@@ -846,13 +860,19 @@ export default function App() {
                         {backgroundLocked ? 'Unlock Theme' : 'Lock Theme'}
                       </button>
                       
-                      <div className="h-px bg-slate-100/10 my-1" />
-                      <div className="px-3 py-2 text-[10px] uppercase tracking-widest text-slate-400 font-bold border-b border-slate-50/10 mb-1">
+                      <div className={`h-px my-1 ${backgroundImage ? 'bg-white/10' : 'bg-slate-100'}`} />
+                      <div className={`px-3 py-2 text-[10px] uppercase tracking-widest font-bold border-b mb-1 ${
+                        backgroundImage ? 'text-slate-400 border-white/10' : 'text-slate-400 border-slate-100'
+                      }`}>
                         System
                       </div>
                       
                       <button 
-                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${maintenanceMode ? 'text-amber-500 hover:bg-amber-500/10' : 'text-slate-500 hover:bg-slate-500/10'}`}
+                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${
+                          maintenanceMode 
+                            ? 'text-amber-500 hover:bg-amber-500/10' 
+                            : (backgroundImage ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:bg-slate-100')
+                        }`}
                         onClick={() => {
                           setShowAdminMenu(false);
                           toggleMaintenance();
@@ -863,7 +883,9 @@ export default function App() {
                       </button>
 
                       <button 
-                        className="w-full text-left px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-500/10 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 ${
+                          backgroundImage ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:bg-slate-100'
+                        }`}
                         onClick={() => {
                           setShowAdminMenu(false);
                           syncGithub();
@@ -875,7 +897,9 @@ export default function App() {
                       </button>
 
                       <button 
-                        className="w-full text-left px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-500/10 rounded-lg transition-colors flex items-center gap-2"
+                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${
+                          backgroundImage ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-slate-500 hover:bg-slate-100'
+                        }`}
                         onClick={() => {
                           setAdminPassword('');
                           localStorage.removeItem('admin_pass');
@@ -1043,7 +1067,7 @@ export default function App() {
                     <button 
                       type="button"
                       onClick={navigateToHome}
-                      className={`w-full py-2 font-black text-[10px] uppercase tracking-[0.2em] transition-colors ${backgroundImage ? 'text-slate-900/60 hover:text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+                      className={`w-full py-2 font-black text-[10px] uppercase tracking-[0.2em] transition-colors ${backgroundImage ? 'text-white/60 hover:text-white' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                       Cancel
                     </button>
@@ -1109,7 +1133,7 @@ export default function App() {
                 <div className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-2xl border shadow-sm grow transition-colors duration-150 overflow-x-auto whitespace-nowrap scrollbar-hide ${
                   lowSpecMode
                     ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-500')
-                    : (backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20 text-white' : 'bg-white border-slate-200 text-slate-500')
+                    : (backgroundImage ? 'bg-slate-950/45 backdrop-blur-md border-white/10 text-white shadow-md' : 'bg-white border-slate-200 text-slate-500')
                 }`}>
                   <FolderOpen className="w-4 h-4 text-red-500 shrink-0" />
                   <span className={`hover:text-red-500 cursor-pointer transition-colors ${backgroundImage ? 'text-white/70 hover:text-white drop-shadow-sm' : ''}`} onClick={navigateToHome}>Listed App</span>
@@ -1138,7 +1162,7 @@ export default function App() {
                       className={`p-2.5 rounded-2xl transition-colors duration-150 shadow-sm flex items-center justify-center border cursor-pointer ${
                         lowSpecMode
                           ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white hover:bg-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50')
-                          : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-slate-900 hover:bg-white/30' : 'bg-white border-slate-200 text-slate-600')
+                          : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-white hover:bg-white/30' : 'bg-white border-slate-200 text-slate-600')
                       }`}
                       title="Go Back"
                     >
@@ -1151,7 +1175,7 @@ export default function App() {
                     className={`p-2.5 rounded-2xl transition-colors duration-150 shadow-sm flex items-center justify-center border cursor-pointer ${
                       lowSpecMode
                         ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white hover:bg-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50')
-                        : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-slate-900 hover:bg-white/30' : 'bg-white border-slate-200 text-slate-600')
+                        : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-white hover:bg-white/30' : 'bg-white border-slate-200 text-slate-600')
                     }`}
                     title="Refresh"
                   >
@@ -1163,7 +1187,7 @@ export default function App() {
                       className={`p-2.5 rounded-2xl transition-colors duration-150 shadow-sm flex items-center justify-center border cursor-pointer ${
                         lowSpecMode
                           ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white hover:bg-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50')
-                          : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-slate-900 hover:bg-white/30' : 'bg-white border-slate-200 text-slate-600')
+                          : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-white hover:bg-white/30' : 'bg-white border-slate-200 text-slate-600')
                       }`}
                       title="More Options"
                     >
@@ -1172,7 +1196,7 @@ export default function App() {
                     <div className={`absolute right-0 top-full mt-2 w-44 rounded-2xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-[60] transform origin-top-right scale-95 group-hover:scale-100 p-1 border ${
                       lowSpecMode
                         ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200')
-                        : (backgroundImage ? 'bg-white/40 backdrop-blur-sm border-white/30' : 'bg-white border-slate-200')
+                        : (backgroundImage ? 'bg-slate-950/90 backdrop-blur-md border border-white/10 text-white shadow-xl' : 'bg-white border-slate-200')
                     }`}>
                        <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-600'}`} onClick={() => fetchFiles()}>
                           <RefreshCw className="w-3.5 h-3.5 text-red-500" />
@@ -1191,7 +1215,7 @@ export default function App() {
               <div className={`rounded-2xl shadow-md overflow-hidden min-h-[400px] transition-colors duration-150 relative z-10 border ${
                 lowSpecMode
                   ? (backgroundImage ? 'bg-slate-950/95 border-white/10 shadow-2xl' : 'bg-white border-slate-200')
-                  : (backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200')
+                  : (backgroundImage ? 'bg-slate-950/40 backdrop-blur-md border-white/10 shadow-lg' : 'bg-white border-slate-200')
               }`}>
                 {/* Control Bar */}
                 <div className={`p-4 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors duration-150 ${backgroundImage ? 'border-white/10' : 'border-slate-100'}`}>
@@ -1421,7 +1445,7 @@ export default function App() {
               <div className={`rounded-2xl shadow-lg overflow-hidden relative z-10 border transition-colors duration-150 ${
                 lowSpecMode
                   ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white' : 'bg-white border-slate-200')
-                  : (backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20 text-white' : 'bg-white border-slate-200')
+                  : (backgroundImage ? 'bg-slate-950/40 backdrop-blur-md border-white/10 text-white shadow-xl' : 'bg-white border-slate-200')
               }`}>
                 <div className="h-2 bg-red-600" />
                 <div className="p-8 md:p-12 text-center space-y-8">
