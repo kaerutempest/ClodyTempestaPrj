@@ -8,9 +8,7 @@ import { Octokit } from "@octokit/core";
 import { restEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";
 import { paginateRest } from "@octokit/plugin-paginate-rest";
 
-const __dirname = process.cwd();
-
-dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 const MyOctokit = Octokit.plugin(restEndpointMethods, paginateRest);
 
@@ -24,7 +22,7 @@ function getOctokit() {
 
 async function getGithubReleaseConfig() {
   // Try loading dotenv again just in case
-  dotenv.config({ path: path.join(__dirname, '.env') });
+  dotenv.config({ path: path.join(process.cwd(), '.env') });
   const octokit = getOctokit();
   if (!octokit || !process.env.GITHUB_REPO || !process.env.GITHUB_RELEASE_TAG) {
       console.log('GitHub config missing:', { cwd: process.cwd(), token: !!process.env.GITHUB_TOKEN, repo: process.env.GITHUB_REPO, tag: process.env.GITHUB_RELEASE_TAG });

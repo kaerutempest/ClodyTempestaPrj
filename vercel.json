@@ -1,14 +1,9 @@
 {
-  "functions": {
-    "api/**/*.ts": {
-      "includeFiles": ["background.*", "public/background.*"]
-    }
-  },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/download/(.*)", "destination": "/api/index" },
-    { "source": "/local-bg/(.*)", "destination": "/api/index" },
-    { "source": "/preview/(.*)", "destination": "/api/index" },
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/download/(.*)", "destination": "/api" },
+    { "source": "/local-bg/(.*)", "destination": "/api" },
+    { "source": "/preview/(.*)", "destination": "/api" },
     { "source": "/(.*)", "destination": "/" }
   ]
 }
