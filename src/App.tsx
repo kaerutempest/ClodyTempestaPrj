@@ -27,7 +27,8 @@ import {
   Wrench,
   ArrowUp,
   ArrowDown,
-  Github
+  Github,
+  Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -88,31 +89,24 @@ export default function App() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [activeItemMenu, setActiveItemMenu] = useState<string | null>(null);
 
-  const [lowSpecMode, setLowSpecMode] = useState(() => {
+  const lowSpecMode = false;
+
+  const [darkMode, setDarkMode] = useState(() => {
     if (typeof localStorage !== 'undefined') {
-      const saved = localStorage.getItem('low_spec_mode');
-      if (saved !== null) {
-        return saved === 'true'; // Allow admins who stored it to use their preference if desired
-      }
+      return localStorage.getItem('admin_dark_mode') === 'true';
     }
-    return false; // Safely default to smooth mode
+    return false;
   });
 
-  const toggleLowSpecMode = () => {
-    if (!isLoggedIn) return; // Locked for Guest users
-    setLowSpecMode((prev) => {
+  const toggleDarkMode = () => {
+    setDarkMode((prev) => {
       const next = !prev;
-      localStorage.setItem('low_spec_mode', String(next));
+      localStorage.setItem('admin_dark_mode', String(next));
       return next;
     });
   };
 
-  // Keep guest users strictly locked to smooth mode
-  useEffect(() => {
-    if (!isLoggedIn && lowSpecMode) {
-      setLowSpecMode(false);
-    }
-  }, [isLoggedIn, lowSpecMode]);
+  const isDarkActive = !!(backgroundImage || (isLoggedIn && darkMode));
 
   const animProps = (props: {
     initial?: any;
@@ -120,19 +114,10 @@ export default function App() {
     exit?: any;
     transition?: any;
   }) => {
-    if (lowSpecMode) {
-      return {
-        initial: props.animate,
-        animate: props.animate,
-        exit: undefined,
-        transition: { duration: 0 }
-      };
-    }
     return props;
   };
 
   const hoverTapProps = (scaleHover = 1.05, scaleTap = 0.95) => {
-    if (lowSpecMode) return {};
     return {
       whileHover: { scale: scaleHover },
       whileTap: { scale: scaleTap }
@@ -679,7 +664,7 @@ export default function App() {
   );
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 w-full relative overflow-x-hidden ${backgroundImage ? 'bg-slate-900' : 'bg-slate-50'} text-slate-900 font-sans selection:bg-red-100 selection:text-red-900`}>
+    <div className={`min-h-screen transition-all duration-500 w-full relative overflow-x-hidden ${isDarkActive ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'} font-sans selection:bg-red-100 selection:text-red-900`}>
       {/* Background Layer (optimized for high FPS and smooth scrolling on CPU & GPU) */}
       <AnimatePresence>
         {backgroundImage && (
@@ -714,8 +699,8 @@ export default function App() {
             />
             {/* Dark overlay to ensure text readability */}
             <div 
-              className={`absolute inset-0 bg-slate-900/60 ${lowSpecMode ? '' : 'backdrop-blur-[2px]'}`} 
-              style={lowSpecMode ? {} : {
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" 
+              style={{
                 transform: 'translate3d(0, 0, 0)',
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden',
@@ -729,52 +714,31 @@ export default function App() {
       {/* Header - Floating Blurry Tablet */}
       <header className="sticky top-4 z-50 px-4 mb-6">
         <div className={`max-w-6xl mx-auto h-14 px-4 flex items-center justify-between rounded-2xl border transition-[colors,transform,shadow] duration-150 transform-gpu ${
-          lowSpecMode 
-            ? (backgroundImage ? 'bg-slate-950/95 border-white/10 text-white shadow-md' : 'bg-white border-slate-200 text-slate-800 shadow-sm')
-            : (backgroundImage ? 'bg-white/20 backdrop-blur-md max-md:backdrop-blur-[3px] border-white/20 shadow-sm text-white' : 'bg-white/90 backdrop-blur-md max-md:backdrop-blur-[3px] border-slate-200 shadow-sm text-slate-800')
+          isDarkActive ? 'bg-slate-950/75 backdrop-blur-md border-white/15 text-white shadow-lg' : 'bg-white/90 backdrop-blur-md max-md:backdrop-blur-[3px] border-slate-200 shadow-sm text-slate-800'
         }`}>
            <div 
             className="flex items-center gap-3 cursor-pointer group" 
             onClick={navigateToHome}
             onDoubleClick={() => setView('login')}
           >
-            <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-md ${lowSpecMode ? '' : 'md:group-hover:scale-105 transition-transform duration-150 transform-gpu'} overflow-hidden ${
-              lowSpecMode
-                ? (backgroundImage ? 'bg-slate-900 border-white/10' : 'bg-slate-800')
-                : (backgroundImage ? 'bg-slate-900/40 backdrop-blur-md border border-white/10' : 'bg-linear-to-br from-slate-800 to-slate-900')
+            <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-md md:group-hover:scale-105 transition-transform duration-150 transform-gpu overflow-hidden ${
+              isDarkActive ? 'bg-slate-900/40 backdrop-blur-md border border-white/10' : 'bg-linear-to-br from-slate-800 to-slate-900'
             }`}>
-              <Cloud className="w-4 h-4 text-slate-100 opacity-40" />
-              <Zap className="absolute inset-0 m-auto w-4 h-4 text-red-500 fill-red-500 group-hover:scale-110 transition-transform duration-150" />
+              <Cloud className="w-4 h-4 text-slate-100 group-hover:scale-110 transition-transform duration-150" />
             </div>
-            <span className={`text-base font-black tracking-tighter group-hover:text-red-500 transition-colors uppercase drop-shadow-sm ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>Tempesta <span className={backgroundImage ? 'text-white/70 font-bold' : 'text-slate-400 font-medium'}>Cloudy</span></span>
+            <span className={`text-base font-black tracking-tighter group-hover:text-red-500 transition-colors uppercase drop-shadow-sm ${isDarkActive ? 'text-white' : 'text-slate-800'}`}>Tempesta <span className={isDarkActive ? 'text-white/70 font-bold' : 'text-slate-400 font-medium'}>Cloudy</span></span>
           </div>
           
           <div className="flex items-center gap-2 md:gap-4">
-            {/* Performance/Battery Saver Toggle */}
-            <button 
-              onClick={isLoggedIn ? toggleLowSpecMode : undefined}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors border shadow-xs ${
-                !isLoggedIn 
-                  ? (backgroundImage ? 'bg-white/5 border-white/10 text-white/40 cursor-not-allowed' : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed')
-                  : (lowSpecMode 
-                    ? 'bg-amber-500/20 text-amber-500 border-amber-500/30 hover:bg-amber-500/30 shadow-sm cursor-pointer'
-                    : (backgroundImage ? 'bg-white/10 text-white/90 border-white/25 hover:bg-white/20 cursor-pointer' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 cursor-pointer'))
-              }`}
-              title={!isLoggedIn ? "Mode Grafis Tinggi (Smooth) diaktifkan secara default untuk Tamu" : (lowSpecMode ? "Nyalakan Grafis Tinggi" : "Nyalakan Mode Lag-Free (HP Kentang)")}
-            >
-              <Zap className={`w-3.5 h-3.5 ${lowSpecMode ? 'text-amber-400 fill-amber-400 animate-pulse' : 'text-slate-400'}`} />
-              <span className="hidden sm:inline-block">{lowSpecMode ? 'Hemat Baterai/FPS: On' : 'Bebas Lag: Off'}</span>
-            </button>
-
-            <nav className={`hidden md:flex items-center gap-4 text-[10px] font-black uppercase tracking-widest drop-shadow-sm ${backgroundImage ? 'text-white font-black' : 'text-slate-600'}`}>
+            <nav className={`hidden md:flex items-center gap-4 text-[10px] font-black uppercase tracking-widest drop-shadow-sm ${isDarkActive ? 'text-white font-black' : 'text-slate-600'}`}>
               <button onClick={navigateToHome} className="hover:text-red-400 transition-colors flex items-center gap-2 cursor-pointer"><Home className="w-3.5 h-3.5"/> Beranda</button>
               <a href="https://saweria.co/Kaedesu" target="_blank" className="hover:text-pink-400 transition-colors flex items-center gap-2 cursor-pointer"><Heart className="w-3.5 h-3.5"/> Donate</a>
             </nav>
-            <div className={`h-5 w-px hidden md:block ${backgroundImage ? 'bg-white/20' : 'bg-slate-200'}`} />
+            <div className={`h-5 w-px hidden md:block ${isDarkActive ? 'bg-white/20' : 'bg-slate-200'}`} />
             
             {/* Mobile Menu Toggle */}
             <button 
-              className={`md:hidden p-2 rounded-xl transition-all ${backgroundImage ? 'bg-white/10 text-white border border-white/20 hover:bg-white/20 animate-none' : 'text-slate-600 hover:bg-slate-100 bg-slate-50'}`}
+              className={`md:hidden p-2 rounded-xl transition-all ${isDarkActive ? 'bg-white/10 text-white border border-white/20 hover:bg-white/20 animate-none' : 'text-slate-600 hover:bg-slate-100 bg-slate-50'}`}
               onClick={() => setShowMobileMenu(!showMobileMenu)}
             >
               {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -785,12 +749,10 @@ export default function App() {
                 <button 
                   onClick={() => setShowAdminMenu(!showAdminMenu)}
                   className={`flex items-center gap-2 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border shadow-sm ${
-                    lowSpecMode
-                      ? (backgroundImage ? 'bg-slate-800 border-slate-700 text-white hover:bg-slate-700' : 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100')
-                      : (backgroundImage ? 'bg-white/20 backdrop-blur-md text-white border-white/20 hover:bg-white/30 drop-shadow-sm' : 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100')
+                    isDarkActive ? 'bg-white/20 backdrop-blur-md text-white border-white/20 hover:bg-white/30 drop-shadow-sm' : 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100'
                   }`}
                 >
-                   <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${backgroundImage ? 'bg-white' : 'bg-red-500'}`} />
+                   <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isDarkActive ? 'bg-white' : 'bg-red-500'}`} />
                    Admin
                 </button>
                 
@@ -804,13 +766,11 @@ export default function App() {
                         transition: { duration: 0.2, ease: "easeOut" }
                       })}
                       className={`absolute right-0 mt-2 w-48 border rounded-xl shadow-lg p-1 z-[60] overflow-hidden ${
-                        lowSpecMode
-                          ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200 text-slate-800')
-                          : (backgroundImage ? 'bg-slate-950/90 backdrop-blur-md border border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200')
+                        isDarkActive ? 'bg-slate-950/90 backdrop-blur-md border border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200 text-slate-800'
                       }`}
                     >
                       <div className={`px-3 py-2 text-[10px] uppercase tracking-widest font-bold border-b mb-1 ${
-                        backgroundImage ? 'text-slate-400 border-white/10' : 'text-slate-400 border-slate-100'
+                        isDarkActive ? 'text-slate-400 border-white/10' : 'text-slate-400 border-slate-100'
                       }`}>
                         Display Settings
                       </div>
@@ -818,7 +778,7 @@ export default function App() {
                         className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${
                           backgroundLocked 
                             ? 'text-slate-400 opacity-50 cursor-not-allowed' 
-                            : (backgroundImage ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-slate-700 hover:bg-slate-100')
+                            : (isDarkActive ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-slate-700 hover:bg-slate-100')
                         }`}
                         onClick={() => {
                           if (backgroundLocked) return;
@@ -836,7 +796,7 @@ export default function App() {
                           className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${
                             backgroundLocked 
                               ? 'text-slate-400 opacity-50 cursor-not-allowed' 
-                              : (backgroundImage ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-red-650 hover:bg-slate-100')
+                              : (isDarkActive ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-red-650 hover:bg-slate-100')
                           }`}
                           onClick={() => {
                             if (backgroundLocked) return;
@@ -854,7 +814,7 @@ export default function App() {
                         className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${
                           backgroundLocked 
                             ? 'text-amber-500 hover:bg-amber-500/10' 
-                            : (backgroundImage ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:bg-slate-100')
+                            : (isDarkActive ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:bg-slate-100')
                         }`}
                         onClick={() => {
                           setShowAdminMenu(false);
@@ -864,10 +824,23 @@ export default function App() {
                         <Lock className="w-3.5 h-3.5" />
                         {backgroundLocked ? 'Unlock Theme' : 'Lock Theme'}
                       </button>
+
+                      <button 
+                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${
+                          isDarkActive ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                        onClick={() => {
+                          setShowAdminMenu(false);
+                          toggleDarkMode();
+                        }}
+                      >
+                        <Moon className={`w-3.5 h-3.5 ${darkMode ? 'text-amber-400 fill-amber-300' : 'text-red-500'}`} />
+                        {darkMode ? 'Dark Mode: ON' : 'Dark Mode: OFF'}
+                      </button>
                       
-                      <div className={`h-px my-1 ${backgroundImage ? 'bg-white/10' : 'bg-slate-100'}`} />
+                      <div className={`h-px my-1 ${isDarkActive ? 'bg-white/10' : 'bg-slate-100'}`} />
                       <div className={`px-3 py-2 text-[10px] uppercase tracking-widest font-bold border-b mb-1 ${
-                        backgroundImage ? 'text-slate-400 border-white/10' : 'text-slate-400 border-slate-100'
+                        isDarkActive ? 'text-slate-400 border-white/10' : 'text-slate-400 border-slate-100'
                       }`}>
                         System
                       </div>
@@ -876,7 +849,7 @@ export default function App() {
                         className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${
                           maintenanceMode 
                             ? 'text-amber-500 hover:bg-amber-500/10' 
-                            : (backgroundImage ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:bg-slate-100')
+                            : (isDarkActive ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:bg-slate-100')
                         }`}
                         onClick={() => {
                           setShowAdminMenu(false);
@@ -889,7 +862,7 @@ export default function App() {
 
                       <button 
                         className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 ${
-                          backgroundImage ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:bg-slate-100'
+                          isDarkActive ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:bg-slate-100'
                         }`}
                         onClick={() => {
                           setShowAdminMenu(false);
@@ -903,7 +876,7 @@ export default function App() {
 
                       <button 
                         className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${
-                          backgroundImage ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-slate-500 hover:bg-slate-100'
+                          isDarkActive ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-slate-500 hover:bg-slate-100'
                         }`}
                         onClick={() => {
                           setAdminPassword('');
@@ -923,9 +896,9 @@ export default function App() {
               <div className="flex items-center gap-4">
                 <span 
                   className={`text-[10px] md:text-xs font-bold px-3 py-1 rounded-lg uppercase tracking-wider select-none ${
-                    backgroundImage 
+                    isDarkActive 
                       ? 'bg-white/10 text-white/90 border border-white/20 backdrop-blur-xs' 
-                      : 'bg-slate-150 text-slate-600 border border-slate-200'
+                      : 'bg-slate-200 text-slate-600 border border-slate-350'
                   }`}
                 >
                   Guest
@@ -959,18 +932,14 @@ export default function App() {
               transition: { duration: 0.15, ease: "easeOut" }
             })}
             className={`md:hidden border-b overflow-hidden z-40 relative ${
-              lowSpecMode
-                ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-800')
-                : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20' : 'bg-white border-slate-200')
+              isDarkActive ? 'bg-slate-950/70 backdrop-blur-sm border-white/20' : 'bg-white border-slate-200'
             }`}
           >
             <div className="px-4 py-4 space-y-4">
               <button 
                 onClick={() => { navigateToHome(); setShowMobileMenu(false); }} 
                 className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-colors drop-shadow-sm ${
-                  lowSpecMode
-                    ? (backgroundImage ? 'text-white hover:bg-white/10' : 'text-slate-700 hover:bg-slate-50')
-                    : (backgroundImage ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50')
+                  isDarkActive ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >
                 <Home className="w-5 h-5 text-red-500" /> Beranda
@@ -979,9 +948,7 @@ export default function App() {
                 href="https://saweria.co/Kaedesu" 
                 target="_blank" 
                 className={`block w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-colors drop-shadow-sm ${
-                  lowSpecMode
-                    ? (backgroundImage ? 'text-white hover:bg-white/10' : 'text-slate-700 hover:bg-slate-50')
-                    : (backgroundImage ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50')
+                  isDarkActive ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50'
                 }`}
                 onClick={() => setShowMobileMenu(false)}
               >
@@ -993,9 +960,7 @@ export default function App() {
                   className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-colors drop-shadow-sm ${
                     maintenanceMode 
                       ? 'text-amber-500 hover:bg-amber-500/10' 
-                      : (lowSpecMode 
-                          ? (backgroundImage ? 'text-white hover:bg-white/10' : 'text-slate-700 hover:bg-slate-50')
-                          : (backgroundImage ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50'))
+                      : (isDarkActive ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50')
                   }`}
                 >
                   <Wrench className="w-5 h-5" /> {maintenanceMode ? 'Maintenance: ON' : 'Maintenance: OFF'}
@@ -1019,16 +984,14 @@ export default function App() {
                 className="max-w-sm mx-auto pt-20"
               >
                 <div className={`p-8 rounded-2xl border shadow-lg transition-colors duration-150 ${
-                  lowSpecMode
-                    ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200 text-slate-800')
-                    : (backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200')
+                  isDarkActive ? 'bg-slate-950 border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200 text-slate-800'
                 }`}>
                   <div className="text-center mb-6">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 border transition-colors duration-150 ${backgroundImage ? 'bg-white/10 border-white/20 text-white' : 'bg-slate-100 border-slate-200 text-slate-400'}`}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 border transition-colors duration-150 ${isDarkActive ? 'bg-white/10 border-white/20 text-white' : 'bg-slate-100 border-slate-200 text-slate-400'}`}>
                       <Lock className="w-6 h-6" />
                     </div>
-                    <h2 className={`text-xl font-black uppercase tracking-tight drop-shadow-sm ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>Admin Login</h2>
-                    <p className={`text-xs font-bold uppercase tracking-widest mt-2 drop-shadow-sm ${backgroundImage ? 'text-white/80' : 'text-slate-400'}`}>Authorization Protocol</p>
+                    <h2 className={`text-xl font-black uppercase tracking-tight drop-shadow-sm ${isDarkActive ? 'text-white' : 'text-slate-800'}`}>Admin Login</h2>
+                    <p className={`text-xs font-bold uppercase tracking-widest mt-2 drop-shadow-sm ${isDarkActive ? 'text-white/80' : 'text-slate-400'}`}>Authorization Protocol</p>
                     {loginError && (
                       <motion.p 
                         {...animProps({
@@ -1049,20 +1012,20 @@ export default function App() {
                       onChange={(e) => setLoginInput(e.target.value)}
                       disabled={isLoggingIn}
                       placeholder="Access Key" 
-                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${backgroundImage ? 'bg-white/20 border-white/30 focus:bg-white/40 focus:border-red-400 text-slate-900 placeholder-slate-700' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/20 focus:border-red-50'} ${loginError ? 'border-red-500/50' : ''}`}
+                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${isDarkActive ? 'bg-white/20 border-white/30 focus:bg-white/40 focus:border-red-400 text-white placeholder-slate-450' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/20 focus:border-red-50'} ${loginError ? 'border-red-500/50' : ''}`}
                       autoFocus
                     />
                     <button 
                       type="submit"
                       disabled={isLoggingIn}
-                      className="w-full py-3 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-red-700 transition-all active:scale-[0.98] text-xs shadow-lg shadow-red-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full py-3 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-red-700 transition-all active:scale-[0.98] text-xs shadow-lg shadow-red-600/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       {isLoggingIn ? 'Authenticating...' : 'Verify'}
                     </button>
                     <button 
                       type="button"
                       onClick={navigateToHome}
-                      className={`w-full py-2 font-black text-[10px] uppercase tracking-[0.2em] transition-colors ${backgroundImage ? 'text-white/60 hover:text-white' : 'text-slate-400 hover:text-slate-600'}`}
+                      className={`w-full py-2 font-black text-[10px] uppercase tracking-[0.2em] transition-colors cursor-pointer ${isDarkActive ? 'text-white/60 hover:text-white' : 'text-slate-400 hover:text-slate-600'}`}
                     >
                       Cancel
                     </button>
@@ -1080,15 +1043,13 @@ export default function App() {
                 className="max-w-lg mx-auto pt-20"
               >
                 <div className={`p-10 rounded-2xl border shadow-lg text-center transition-colors duration-150 ${
-                  lowSpecMode
-                    ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white' : 'bg-white border-slate-200')
-                    : (backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200')
+                  isDarkActive ? 'bg-slate-950 border-white/10 text-white' : 'bg-white border-slate-200'
                 }`}>
-                  <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 border transition-all ${backgroundImage ? 'bg-white/10 border-white/20 text-white' : 'bg-amber-50 border-amber-100 text-amber-500'}`}>
+                  <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 border transition-all ${isDarkActive ? 'bg-white/10 border-white/20 text-white' : 'bg-amber-50 border-amber-100 text-amber-500'}`}>
                     <Wrench className="w-10 h-10" />
                   </div>
-                  <h2 className={`text-2xl font-black uppercase tracking-tight drop-shadow-sm mb-4 ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>Under Maintenance</h2>
-                  <p className={`text-sm font-bold uppercase tracking-widest mx-auto max-w-sm ${backgroundImage ? 'text-white/80' : 'text-slate-500'}`}>Cloud node is offline for upgrades. Please check back later.</p>
+                  <h2 className={`text-2xl font-black uppercase tracking-tight drop-shadow-sm mb-4 ${isDarkActive ? 'text-white' : 'text-slate-800'}`}>Under Maintenance</h2>
+                  <p className={`text-sm font-bold uppercase tracking-widest mx-auto max-w-sm ${isDarkActive ? 'text-white/80' : 'text-slate-500'}`}>Cloud node is offline for upgrades. Please check back later.</p>
                 </div>
               </motion.div>
           ) : view === 'home' ? (
@@ -1103,21 +1064,17 @@ export default function App() {
             >
               {/* Support Banner - ItsNoMercy style */}
               <div className={`rounded-2xl p-6 text-white relative overflow-hidden group transition-[colors,transform] duration-150 border ${
-                lowSpecMode
-                  ? (backgroundImage ? 'bg-red-950/95 border-red-900/40 shadow-xs' : 'bg-red-600 border-red-700')
-                  : (backgroundImage ? 'bg-red-600/50 backdrop-blur-md border-red-400/20 shadow-md shadow-red-900/10' : 'bg-red-600 border-red-700')
+                isDarkActive ? 'bg-red-950/95 border-red-900/40 shadow-xs' : 'bg-red-600 border-red-700'
               }`}>
                  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-150">
                     <Heart className="w-24 h-24" />
                  </div>
                  <div className="relative z-10 space-y-2">
                     <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2 animate-none">SUPPORT US! 🔥</h2>
-                    <p className={`text-sm max-w-lg font-bold ${backgroundImage ? 'text-white' : 'text-red-100'}`}>Support kami agar bisa terus melakukan update setiap hari dan tetap menyediakan layanan gratis!</p>
+                    <p className={`text-sm max-w-lg font-bold ${isDarkActive ? 'text-white' : 'text-red-100'}`}>Support kami agar bisa terus melakukan update setiap hari dan tetap menyediakan layanan gratis!</p>
                     <div className="flex gap-3 pt-3">
                        <a href="https://saweria.co/Kaedesu" target="_blank" className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${
-                         lowSpecMode
-                           ? (backgroundImage ? 'bg-slate-800 text-white border border-slate-700 hover:bg-slate-700' : 'bg-white text-red-650 hover:bg-slate-100')
-                           : (backgroundImage ? 'bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/20' : 'bg-white text-red-600 hover:bg-red-50')
+                         isDarkActive ? 'bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/20' : 'bg-white text-red-600 hover:bg-red-50'
                        }`}>Saweria</a>
                     </div>
                  </div>
@@ -1125,27 +1082,25 @@ export default function App() {
 
               {/* Breadcrumbs & Controls Unified Tablet */}
               <div className={`flex items-center justify-between p-2 rounded-2xl border shadow-md w-full transition-all duration-150 relative z-20 ${
-                lowSpecMode
-                  ? (backgroundImage ? 'bg-slate-950/95 border-white/15 text-white' : 'bg-white border-slate-200 text-slate-800')
-                  : (backgroundImage ? 'bg-slate-950/75 backdrop-blur-md border-white/15 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-800')
+                isDarkActive ? 'bg-slate-950/75 backdrop-blur-md border-white/15 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-800'
               }`}>
                 {/* Left side: Path trail */}
                 <div className="flex items-center gap-2 text-sm font-medium px-2 py-1.5 grow overflow-x-auto whitespace-nowrap scrollbar-hide min-w-0">
                   <FolderOpen className="w-4 h-4 text-red-500 shrink-0" />
                   <span 
-                    className={`hover:text-red-500 cursor-pointer font-bold transition-colors shrink-0 ${backgroundImage ? 'text-white hover:text-red-400 drop-shadow-xs' : 'text-slate-800'}`} 
+                    className={`hover:text-red-500 cursor-pointer font-bold transition-colors shrink-0 ${isDarkActive ? 'text-white hover:text-red-400 drop-shadow-xs' : 'text-slate-800'}`} 
                     onClick={navigateToHome}
                   >
                     Listed App
                   </span>
                   {folderStack.map((folder, i) => (
                     <React.Fragment key={folder.id}>
-                      <ChevronRight className={`w-3.5 h-3.5 shrink-0 ${backgroundImage ? 'text-white/40' : 'text-slate-400'}`} />
+                      <ChevronRight className={`w-3.5 h-3.5 shrink-0 ${isDarkActive ? 'text-white/40' : 'text-slate-400'}`} />
                       <span 
                         className={`cursor-pointer hover:text-red-500 transition-colors shrink-0 ${
                           i === folderStack.length - 1 
-                            ? (backgroundImage ? 'text-white font-black drop-shadow-xs' : 'text-slate-900 font-bold') 
-                            : (backgroundImage ? 'text-white/70 hover:text-white drop-shadow-xs' : 'text-slate-500')
+                            ? (isDarkActive ? 'text-white font-black drop-shadow-xs' : 'text-slate-900 font-bold') 
+                            : (isDarkActive ? 'text-white/70 hover:text-white drop-shadow-xs' : 'text-slate-500')
                         }`}
                         onClick={() => {
                           const newStack = folderStack.slice(0, i + 1);
@@ -1160,13 +1115,13 @@ export default function App() {
                 </div>
 
                 {/* Right side: Button Controls */}
-                <div className={`flex items-center gap-1.5 shrink-0 pl-2 border-l ${backgroundImage ? 'border-white/10' : 'border-slate-100'}`}>
+                <div className={`flex items-center gap-1.5 shrink-0 pl-2 border-l ${isDarkActive ? 'border-white/10' : 'border-slate-100'}`}>
                   {folderStack.length > 0 && (
                     <motion.button 
                       {...hoverTapProps(1.05, 0.95)}
                       onClick={goBack}
                       className={`p-2 rounded-xl transition-colors duration-150 flex items-center justify-center cursor-pointer ${
-                        backgroundImage 
+                        isDarkActive 
                           ? 'text-white/80 hover:text-white hover:bg-white/10' 
                           : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
                       }`}
@@ -1179,7 +1134,7 @@ export default function App() {
                     {...hoverTapProps(1.05, 0.95)}
                     onClick={() => fetchFiles()}
                     className={`p-2 rounded-xl transition-colors duration-150 flex items-center justify-center cursor-pointer ${
-                      backgroundImage 
+                      isDarkActive 
                         ? 'text-white/80 hover:text-white hover:bg-white/10' 
                         : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
                     }`}
@@ -1192,7 +1147,7 @@ export default function App() {
                       <motion.button 
                         {...hoverTapProps(1.05, 0.95)}
                         className={`p-2 rounded-xl transition-colors duration-150 flex items-center justify-center cursor-pointer ${
-                          backgroundImage 
+                          isDarkActive 
                             ? 'text-white/80 hover:text-white hover:bg-white/10' 
                             : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
                         }`}
@@ -1201,15 +1156,13 @@ export default function App() {
                         <Menu className="w-4 h-4" />
                       </motion.button>
                       <div className={`absolute right-0 top-full mt-2 w-44 rounded-2xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-[60] transform origin-top-right scale-95 group-hover:scale-100 p-1 border ${
-                        lowSpecMode
-                          ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200 text-slate-800')
-                          : (backgroundImage ? 'bg-slate-950/95 backdrop-blur-md border border-white/10 text-white shadow-xl' : 'bg-white border-slate-200')
+                        isDarkActive ? 'bg-slate-950/95 backdrop-blur-md border border-white/10 text-white shadow-xl' : 'bg-white border-slate-200'
                       }`}>
-                        <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-600'}`} onClick={() => fetchFiles()}>
+                        <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${isDarkActive ? 'text-white' : 'text-slate-600'}`} onClick={() => fetchFiles()}>
                           <RefreshCw className="w-3.5 h-3.5 text-red-500" />
                           Force Sync
                         </button>
-                        <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-600'}`} onClick={navigateToHome}>
+                        <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${isDarkActive ? 'text-white' : 'text-slate-600'}`} onClick={navigateToHome}>
                           <Home className="w-3.5 h-3.5 text-red-500" />
                           Terminal Home
                         </button>
@@ -1221,23 +1174,19 @@ export default function App() {
 
               {/* Main Container */}
               <div className={`rounded-2xl shadow-md overflow-hidden min-h-[400px] transition-colors duration-150 relative z-10 border ${
-                lowSpecMode
-                  ? (backgroundImage ? 'bg-slate-950/95 border-white/10 shadow-2xl' : 'bg-white border-slate-200')
-                  : (backgroundImage ? 'bg-slate-950/40 backdrop-blur-md border-white/10 shadow-lg' : 'bg-white border-slate-200')
+                isDarkActive ? 'bg-slate-950/40 backdrop-blur-md border border-white/10 shadow-lg' : 'bg-white border-slate-200'
               }`}>
                 {/* Control Bar */}
-                <div className={`p-4 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors duration-150 ${backgroundImage ? 'border-white/10' : 'border-slate-100'}`}>
+                <div className={`p-4 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors duration-150 ${isDarkActive ? 'border-white/10' : 'border-slate-100'}`}>
                   <div className="relative flex-1 max-w-md">
-                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${backgroundImage ? 'text-white/60' : 'text-slate-400'}`} />
+                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDarkActive ? 'text-white/60' : 'text-slate-400'}`} />
                     <input 
                       type="text" 
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search files..." 
                       className={`pl-10 pr-4 py-2 border rounded-xl text-sm w-full outline-none transition-colors duration-150 font-bold ${
-                        lowSpecMode
-                          ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white placeholder-white/30 focus:border-red-400 shadow-sm' : 'bg-slate-50 border-slate-200 focus:border-red-500 text-slate-800')
-                          : (backgroundImage ? 'bg-white/10 border-white/20 text-white placeholder-white/50 focus:bg-white/20 focus:border-red-400' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/10 focus:border-red-500')
+                        isDarkActive ? 'bg-white/10 border-white/20 text-white placeholder-white/50 focus:bg-white/20 focus:border-red-400' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/10 focus:border-red-500'
                       }`}
                     />
                   </div>
@@ -1247,18 +1196,16 @@ export default function App() {
                       <button 
                          onClick={() => setShowFolderInput(!showFolderInput)}
                          className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors duration-150 cursor-pointer ${
-                           lowSpecMode
-                             ? (backgroundImage ? 'bg-slate-900 border-white/10 hover:bg-slate-800 text-white border' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200')
-                             : (backgroundImage ? 'bg-white/20 hover:bg-white/30 border border-white/20 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200')
+                           isDarkActive ? 'bg-white/20 hover:bg-white/30 border border-white/20 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
                          }`}
                       >
                          <FolderOpen className="w-3.5 h-3.5 text-amber-500" />
                          Directory
                       </button>
                       <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading}
-                        className="bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-red-700 transition-colors duration-150 active:scale-95 disabled:opacity-50 shadow-lg shadow-red-600/20 cursor-pointer"
+                         onClick={() => fileInputRef.current?.click()}
+                         disabled={uploading}
+                         className="bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-red-700 transition-colors duration-150 active:scale-95 disabled:opacity-50 shadow-lg shadow-red-600/20 cursor-pointer"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         {uploading ? `${uploadProgress}%` : 'Upload'}
@@ -1286,7 +1233,7 @@ export default function App() {
                 )}
 
                 {/* File List Header */}
-                <div className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 px-6 py-2 text-[10px] font-bold uppercase tracking-widest border-b ${backgroundImage ? 'bg-white/30 text-white border-white/10 shadow-[0_2px_10px_rgba(0,0,0,0.1)]' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                <div className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 px-6 py-2 text-[10px] font-bold uppercase tracking-widest border-b ${isDarkActive ? 'bg-white/10 text-white border-white/10 shadow-[0_2px_10px_rgba(0,0,0,0.1)]' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
                    <span>Name</span>
                    <span className="hidden md:block text-center">Size</span>
                    <span className="hidden md:block text-right">Date</span>
@@ -1294,11 +1241,11 @@ export default function App() {
                 </div>
 
                 {/* List Content */}
-                <div className={`divide-y ${backgroundImage ? 'divide-white/10' : 'divide-slate-50'}`}>
+                <div className={`divide-y ${isDarkActive ? 'divide-white/10' : 'divide-slate-50'}`}>
                   {filteredFiles.map((file, index) => (
                     <div 
                       key={file.id}
-                      className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 items-center px-6 py-3.5 transition-colors group cursor-pointer ${backgroundImage ? 'hover:bg-white/10' : 'hover:bg-slate-50'}`}
+                      className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 items-center px-6 py-3.5 transition-colors group cursor-pointer ${isDarkActive ? 'hover:bg-white/10' : 'hover:bg-slate-50'}`}
                       onClick={() => file.type === 'folder' ? enterFolder(file) : window.location.href = `/download/${file.id}`}
                     >
                        <div className="flex items-center gap-3 min-w-0 pr-2 grow">
@@ -1320,7 +1267,7 @@ export default function App() {
                               </button>
                             </div>
                           )}
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm ${lowSpecMode ? '' : 'group-hover:scale-105 transition-transform'} ${file.type === 'folder' ? (backgroundImage ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-amber-50 text-amber-500') : (backgroundImage ? 'bg-red-400/20 text-red-300 border border-red-400/30' : 'bg-red-50 text-red-500')}`}>
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105 ${file.type === 'folder' ? (isDarkActive ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-amber-50 text-amber-500') : (isDarkActive ? 'bg-red-400/20 text-red-300 border border-red-400/30' : 'bg-red-50 text-red-500')}`}>
                              {file.type === 'folder' ? <FolderOpen className="w-4 h-4" /> : <File className="w-4 h-4" />}
                           </div>
                           {renamingFileId === file.id ? (
@@ -1333,25 +1280,25 @@ export default function App() {
                                 type="text"
                                 value={renameInput}
                                 onChange={(e) => setRenameInput(e.target.value)}
-                                className={`flex-1 px-3 py-1 border rounded-lg text-sm font-bold outline-none ${backgroundImage ? 'bg-white/20 border-white/30 text-white placeholder-white/50 focus:border-red-400 focus:bg-white/30' : 'bg-white border-slate-200 text-slate-800 focus:border-red-500'}`}
+                                className={`flex-1 px-3 py-1 border rounded-lg text-sm font-bold outline-none ${isDarkActive ? 'bg-white/20 border-white/30 text-white placeholder-white/50 focus:border-red-400 focus:bg-white/30' : 'bg-white border-slate-200 text-slate-800 focus:border-red-500'}`}
                                 autoFocus
                                 onClick={(e) => e.stopPropagation()}
                               />
-                              <button type="submit" className="px-3 py-1 bg-red-600/90 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors">Save</button>
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setRenamingFileId(null); }} className="px-3 py-1 bg-slate-500/90 text-white rounded-lg text-xs font-bold hover:bg-slate-600 transition-colors">Cancel</button>
+                              <button type="submit" className="px-3 py-1 bg-red-600/90 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors cursor-pointer">Save</button>
+                              <button type="button" onClick={(e) => { e.stopPropagation(); setRenamingFileId(null); }} className="px-3 py-1 bg-slate-500/90 text-white rounded-lg text-xs font-bold hover:bg-slate-600 transition-colors cursor-pointer">Cancel</button>
                             </form>
                           ) : (
                             <div className="flex flex-col min-w-0 pr-2">
-                              <span style={{ wordBreak: 'break-word' }} className={`text-sm md:text-base font-bold transition-colors ${backgroundImage ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] group-hover:text-red-300' : 'text-slate-800 group-hover:text-red-600'}`}>{file.originalName}</span>
-                              <div className={`flex md:hidden text-[10px] gap-2 mt-0.5 ${backgroundImage ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>
+                              <span style={{ wordBreak: 'break-word' }} className={`text-sm md:text-base font-bold transition-colors ${isDarkActive ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] group-hover:text-red-300' : 'text-slate-800 group-hover:text-red-600'}`}>{file.originalName}</span>
+                              <div className={`flex md:hidden text-[10px] gap-2 mt-0.5 ${isDarkActive ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>
                                 {file.type !== 'folder' && <span>{formatSize(file.size)}</span>}
                                 <span>{new Date(file.uploadDate).toLocaleDateString()}</span>
                               </div>
                             </div>
                           )}
                        </div>
-                       <span className={`hidden md:block text-center text-xs font-medium ${backgroundImage ? 'text-white/80 drop-shadow-sm' : 'text-slate-500'}`}>{file.type === 'folder' ? '-' : formatSize(file.size)}</span>
-                       <span className={`hidden md:block text-right text-xs font-medium ${backgroundImage ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>{new Date(file.uploadDate).toLocaleDateString()}</span>
+                       <span className={`hidden md:block text-center text-xs font-medium ${isDarkActive ? 'text-white/80 drop-shadow-sm' : 'text-slate-500'}`}>{file.type === 'folder' ? '-' : formatSize(file.size)}</span>
+                       <span className={`hidden md:block text-right text-xs font-medium ${isDarkActive ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>{new Date(file.uploadDate).toLocaleDateString()}</span>
                        {renamingFileId !== file.id && (
                          <div className="flex justify-end gap-1 relative shrink-0">
                             {file.type !== 'folder' && (
@@ -1417,10 +1364,10 @@ export default function App() {
                        <div className="text-center space-y-1 mb-2">
                          {uploadingFile && (
                            <>
-                             <div style={{ wordBreak: 'break-word' }} className={`text-base font-bold ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>
+                             <div style={{ wordBreak: 'break-word' }} className={`text-base font-bold ${isDarkActive ? 'text-white' : 'text-slate-800'}`}>
                                {uploadingFile.name}
                              </div>
-                             <div className={`flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest ${backgroundImage ? 'text-white/60' : 'text-slate-400'}`}>
+                             <div className={`flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest ${isDarkActive ? 'text-white/60' : 'text-slate-400'}`}>
                                <span>{formatSize(uploadingFile.size)}</span>
                                <span>{new Date().toLocaleDateString()}</span>
                              </div>
@@ -1451,16 +1398,12 @@ export default function App() {
               className="max-w-2xl mx-auto space-y-6"
             >
               <div className={`rounded-2xl shadow-lg overflow-hidden relative z-10 border transition-colors duration-150 ${
-                lowSpecMode
-                  ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white' : 'bg-white border-slate-200')
-                  : (backgroundImage ? 'bg-slate-950/40 backdrop-blur-md border-white/10 text-white shadow-xl' : 'bg-white border-slate-200')
+                isDarkActive ? 'bg-slate-950/40 backdrop-blur-md border border-white/10 text-white shadow-xl' : 'bg-white border-slate-200'
               }`}>
                 <div className="h-2 bg-red-600" />
                 <div className="p-8 md:p-12 text-center space-y-8">
                   <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto transition-colors border shadow-inner ${
-                    lowSpecMode
-                      ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white drop-shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400')
-                      : (backgroundImage ? 'bg-white/10 border-white/20 text-white drop-shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400')
+                    isDarkActive ? 'bg-white/10 border-white/20 text-white drop-shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400'
                   }`}>
                     <File className="w-10 h-10" />
                   </div>
@@ -1475,30 +1418,30 @@ export default function App() {
                             type="text"
                             value={renameInput}
                             onChange={(e) => setRenameInput(e.target.value)}
-                            className={`flex-1 w-full min-w-[200px] px-3 py-1.5 border rounded-lg text-lg font-black outline-none ${backgroundImage ? 'bg-white/20 border-white/30 text-white placeholder-white/50 focus:border-red-400 focus:bg-white/30' : 'bg-white border-slate-200 text-slate-800 focus:border-red-500'}`}
+                            className={`flex-1 w-full min-w-[200px] px-3 py-1.5 border rounded-lg text-lg font-black outline-none ${isDarkActive ? 'bg-white/20 border-white/30 text-white placeholder-white/50 focus:border-red-400 focus:bg-white/30' : 'bg-white border-slate-200 text-slate-800 focus:border-red-500'}`}
                             autoFocus
                           />
                           <div className="flex gap-2 w-full justify-center sm:w-auto">
-                            <button type="submit" className="px-4 py-1.5 bg-red-600/90 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors">Save</button>
-                            <button type="button" onClick={() => setRenamingFileId(null)} className="px-4 py-1.5 bg-slate-500/90 text-white rounded-lg text-sm font-bold hover:bg-slate-600 transition-colors">Cancel</button>
+                            <button type="submit" className="px-4 py-1.5 bg-red-600/90 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors cursor-pointer">Save</button>
+                            <button type="button" onClick={() => setRenamingFileId(null)} className="px-4 py-1.5 bg-slate-500/90 text-white rounded-lg text-sm font-bold hover:bg-slate-600 transition-colors cursor-pointer">Cancel</button>
                           </div>
                         </form>
                     ) : (
-                        <h1 style={{ wordBreak: 'break-word' }} className={`text-2xl font-black tracking-tighter uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] flex flex-wrap items-center justify-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>
+                        <h1 style={{ wordBreak: 'break-word' }} className={`text-2xl font-black tracking-tighter uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] flex flex-wrap items-center justify-center gap-2 ${isDarkActive ? 'text-white' : 'text-slate-800'}`}>
                           {selectedFile?.originalName}
                           {isLoggedIn && selectedFile && (
                              <button 
                                onClick={() => { setRenamingFileId(selectedFile.id); setRenameInput(selectedFile.originalName); }}
-                               className="p-1.5 rounded-lg text-blue-400 hover:text-white hover:bg-blue-500 transition-all opacity-50 hover:opacity-100"
+                               className="p-1.5 rounded-lg text-blue-400 hover:text-white hover:bg-blue-500 transition-all opacity-50 hover:opacity-100 cursor-pointer"
                              >
                                 <Edit2 className="w-5 h-5" />
                              </button>
                           )}
                         </h1>
                     )}
-                    <div className={`flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-widest ${backgroundImage ? 'text-white/70' : 'text-slate-400'}`}>
+                    <div className={`flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-widest ${isDarkActive ? 'text-white/70' : 'text-slate-400'}`}>
                       <span>{formatSize(selectedFile?.size || 0)}</span>
-                      <span className={`w-1.5 h-1.5 rounded-full ${backgroundImage ? 'bg-white/40' : 'bg-slate-200'}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${isDarkActive ? 'bg-white/40' : 'bg-slate-200'}`} />
                       <span>Ready for Transmission</span>
                     </div>
                   </div>
@@ -1513,7 +1456,7 @@ export default function App() {
                     </a>
                     <button 
                       onClick={() => selectedFile && copyLink(selectedFile.id)}
-                      className={`w-full py-4 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all border text-xs ${backgroundImage ? 'bg-white/20 border-white/30 text-white hover:bg-white/30 shadow-lg shadow-black/5' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                      className={`w-full py-4 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all border text-xs ${isDarkActive ? 'bg-white/20 border-white/30 text-white hover:bg-white/30 shadow-lg shadow-black/5' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
                     >
                       <Share2 className="w-4 h-4" />
                       Copy Origin URL
@@ -1529,13 +1472,13 @@ export default function App() {
                     )}
                     <button 
                       onClick={navigateToHome}
-                      className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors py-2 ${backgroundImage ? 'text-white/60 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}
+                      className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors py-2 ${isDarkActive ? 'text-white/60 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}
                     >
                       Back to Matrix
                     </button>
                   </div>
 
-                  <div className={`pt-8 border-t flex items-center justify-center gap-8 grayscale opacity-50 ${backgroundImage ? 'border-white/10' : 'border-slate-100'}`}>
+                  <div className={`pt-8 border-t flex items-center justify-center gap-8 grayscale opacity-50 ${isDarkActive ? 'border-white/10' : 'border-slate-100'}`}>
                     <div className="flex flex-col items-center gap-2">
                        <CheckCircle2 className="w-5 h-5" />
                        <span className="text-[8px] font-black uppercase">Identity Verified</span>
@@ -1557,19 +1500,19 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <footer className={`max-w-6xl mx-auto px-4 py-12 border-t mt-12 mb-8 transition-all ${backgroundImage ? 'border-white/10' : 'border-slate-200'}`}>
-        <div className={`flex flex-col md:flex-row items-center justify-between gap-6 ${backgroundImage ? 'opacity-100 drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]' : 'opacity-60'}`}>
+      <footer className={`max-w-6xl mx-auto px-4 py-12 border-t mt-12 mb-8 transition-all ${isDarkActive ? 'border-white/10' : 'border-slate-200'}`}>
+        <div className={`flex flex-col md:flex-row items-center justify-between gap-6 ${isDarkActive ? 'opacity-100 drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]' : 'opacity-60'}`}>
           <div className="flex items-center gap-3 group cursor-default">
-            <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-lg overflow-hidden transition-all duration-300 ${backgroundImage ? 'bg-slate-900/80 backdrop-blur-md' : 'bg-linear-to-br from-slate-800 to-slate-900'}`}>
+            <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-lg overflow-hidden transition-all duration-300 ${isDarkActive ? 'bg-slate-900/80 backdrop-blur-md' : 'bg-linear-to-br from-slate-800 to-slate-900'}`}>
               <Cloud className="w-5 h-5 text-slate-100 opacity-30 group-hover:opacity-50 transition-opacity" />
               <Zap className="absolute inset-0 m-auto w-4.5 h-4.5 text-red-500 fill-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]" />
             </div>
-            <span className={`text-sm font-bold tracking-tight uppercase ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>Tempesta <span className={backgroundImage ? 'text-white/70' : 'text-slate-400'}>Cloudy</span></span>
+            <span className={`text-sm font-bold tracking-tight uppercase ${isDarkActive ? 'text-white' : 'text-slate-800'}`}>Tempesta <span className={isDarkActive ? 'text-white/70' : 'text-slate-400'}>Cloudy</span></span>
           </div>
-          <p className={`text-xs font-bold uppercase tracking-widest ${backgroundImage ? 'text-white' : 'text-slate-500'}`}>
+          <p className={`text-xs font-bold uppercase tracking-widest ${isDarkActive ? 'text-white' : 'text-slate-500'}`}>
             &copy; 2024 Tempesta Cloudy
           </p>
-          <div className={`text-[10px] font-black uppercase tracking-[0.2em] ${backgroundImage ? 'text-white' : 'text-slate-400'}`}>
+          <div className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDarkActive ? 'text-white' : 'text-slate-400'}`}>
             Powered by KaeruShi X Rimiru
           </div>
         </div>
