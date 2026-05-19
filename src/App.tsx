@@ -633,7 +633,7 @@ export default function App() {
       <AnimatePresence>
         {backgroundImage && (
           <motion.div 
-            key={backgroundImage}
+            key="custom-bg"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

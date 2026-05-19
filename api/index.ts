@@ -139,8 +139,16 @@ app.get('/api/settings', (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   
   let defaultBackground = '';
-  // Check root dir first
-  if (fs.existsSync(path.join(process.cwd(), 'background.jpg'))) {
+  
+  // Check github synced files in metadata first
+  const githubBg = Object.values(filesMetadata).find(f => 
+    f.type === 'file' && f.originalName && f.originalName.match(/^background\.(jpg|png|webp)$/i)
+  );
+  if (githubBg) {
+    defaultBackground = `/preview/${githubBg.id}`;
+  }
+  // Then check root dir
+  else if (fs.existsSync(path.join(process.cwd(), 'background.jpg'))) {
     defaultBackground = '/local-bg/background.jpg';
   } else if (fs.existsSync(path.join(process.cwd(), 'background.png'))) {
     defaultBackground = '/local-bg/background.png';
@@ -498,9 +506,8 @@ app.get('/download/:id', (req, res) => {
 app.get('/preview/:id', (req, res) => {
   const id = req.params.id;
   const metadata = filesMetadata[id];
-  if (!metadata) return res.status(404).send('File not found');
   
-  if (metadata.githubDownloadUrl) {
+  if (metadata && metadata.githubDownloadUrl) {
     return res.redirect(metadata.githubDownloadUrl);
   }
 
