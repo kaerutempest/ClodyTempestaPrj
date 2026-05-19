@@ -922,13 +922,11 @@ export default function App() {
             ) : (
               <div className="flex items-center gap-4">
                 <span 
-                  onDoubleClick={() => setView('login')}
                   className={`text-[10px] md:text-xs font-bold px-3 py-1 rounded-lg uppercase tracking-wider select-none ${
                     backgroundImage 
                       ? 'bg-white/10 text-white/90 border border-white/20 backdrop-blur-xs' 
                       : 'bg-slate-150 text-slate-600 border border-slate-200'
                   }`}
-                  title="Guest Mode Active"
                 >
                   Guest
                 </span>
@@ -989,14 +987,7 @@ export default function App() {
               >
                 <Heart className="w-5 h-5 text-pink-500" /> Support/Donate
               </a>
-              {!isLoggedIn ? (
-                <div className={`p-3 text-[10px] uppercase font-black tracking-widest flex items-center gap-2 ${
-                  backgroundImage ? 'text-white/60' : 'text-slate-400'
-                }`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${backgroundImage ? 'bg-white/40' : 'bg-slate-400'}`} />
-                  Guest Mode Active
-                </div>
-              ) : (
+              {isLoggedIn && (
                 <button 
                   onClick={() => { toggleMaintenance(); setShowMobileMenu(false); }} 
                   className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-colors drop-shadow-sm ${
