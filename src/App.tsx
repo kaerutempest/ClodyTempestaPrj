@@ -92,25 +92,27 @@ export default function App() {
     if (typeof localStorage !== 'undefined') {
       const saved = localStorage.getItem('low_spec_mode');
       if (saved !== null) {
-        return saved === 'true';
+        return saved === 'true'; // Allow admins who stored it to use their preference if desired
       }
     }
-    if (typeof window !== 'undefined' && window.navigator) {
-      const ua = window.navigator.userAgent.toLowerCase();
-      const isMobile = /iphone|ipad|ipod|android|blackberry|webos|iemobile|opera mini/i.test(ua);
-      const isTouch = 'ontouchstart' in window || window.navigator.maxTouchPoints > 0;
-      return isMobile || isTouch;
-    }
-    return false;
+    return false; // Safely default to smooth mode
   });
 
   const toggleLowSpecMode = () => {
+    if (!isLoggedIn) return; // Locked for Guest users
     setLowSpecMode((prev) => {
       const next = !prev;
       localStorage.setItem('low_spec_mode', String(next));
       return next;
     });
   };
+
+  // Keep guest users strictly locked to smooth mode
+  useEffect(() => {
+    if (!isLoggedIn && lowSpecMode) {
+      setLowSpecMode(false);
+    }
+  }, [isLoggedIn, lowSpecMode]);
 
   const animProps = (props: {
     initial?: any;
@@ -731,9 +733,10 @@ export default function App() {
             ? (backgroundImage ? 'bg-slate-950/95 border-white/10 text-white shadow-md' : 'bg-white border-slate-200 text-slate-800 shadow-sm')
             : (backgroundImage ? 'bg-white/20 backdrop-blur-md max-md:backdrop-blur-[3px] border-white/20 shadow-sm text-white' : 'bg-white/90 backdrop-blur-md max-md:backdrop-blur-[3px] border-slate-200 shadow-sm text-slate-800')
         }`}>
-          <div 
+           <div 
             className="flex items-center gap-3 cursor-pointer group" 
             onClick={navigateToHome}
+            onDoubleClick={() => setView('login')}
           >
             <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-md ${lowSpecMode ? '' : 'md:group-hover:scale-105 transition-transform duration-150 transform-gpu'} overflow-hidden ${
               lowSpecMode
@@ -749,13 +752,15 @@ export default function App() {
           <div className="flex items-center gap-2 md:gap-4">
             {/* Performance/Battery Saver Toggle */}
             <button 
-              onClick={toggleLowSpecMode}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors border shadow-xs cursor-pointer ${
-                lowSpecMode 
-                  ? 'bg-amber-500/20 text-amber-500 border-amber-500/30 hover:bg-amber-500/30 shadow-sm'
-                  : (backgroundImage ? 'bg-white/10 text-white/90 border-white/25 hover:bg-white/20' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200')
+              onClick={isLoggedIn ? toggleLowSpecMode : undefined}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors border shadow-xs ${
+                !isLoggedIn 
+                  ? (backgroundImage ? 'bg-white/5 border-white/10 text-white/40 cursor-not-allowed' : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed')
+                  : (lowSpecMode 
+                    ? 'bg-amber-500/20 text-amber-500 border-amber-500/30 hover:bg-amber-500/30 shadow-sm cursor-pointer'
+                    : (backgroundImage ? 'bg-white/10 text-white/90 border-white/25 hover:bg-white/20 cursor-pointer' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 cursor-pointer'))
               }`}
-              title={lowSpecMode ? "Nyalakan Grafis Tinggi" : "Nyalakan Mode Lag-Free (HP Kentang)"}
+              title={!isLoggedIn ? "Mode Grafis Tinggi (Smooth) diaktifkan secara default untuk Tamu" : (lowSpecMode ? "Nyalakan Grafis Tinggi" : "Nyalakan Mode Lag-Free (HP Kentang)")}
             >
               <Zap className={`w-3.5 h-3.5 ${lowSpecMode ? 'text-amber-400 fill-amber-400 animate-pulse' : 'text-slate-400'}`} />
               <span className="hidden sm:inline-block">{lowSpecMode ? 'Hemat Baterai/FPS: On' : 'Bebas Lag: Off'}</span>
@@ -916,14 +921,17 @@ export default function App() {
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <span className="hidden sm:inline-block text-[10px] font-black bg-slate-100 text-slate-500 px-2.5 py-1 rounded uppercase tracking-[0.1em]">Guest</span>
-                <button 
-                  onClick={() => setView('login')}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors cursor-pointer"
+                <span 
+                  onDoubleClick={() => setView('login')}
+                  className={`text-[10px] md:text-xs font-bold px-3 py-1 rounded-lg uppercase tracking-wider select-none ${
+                    backgroundImage 
+                      ? 'bg-white/10 text-white/90 border border-white/20 backdrop-blur-xs' 
+                      : 'bg-slate-150 text-slate-600 border border-slate-200'
+                  }`}
+                  title="Guest Mode Active"
                 >
-                  <Lock className="w-3.5 h-3.5" />
-                  Login
-                </button>
+                  Guest
+                </span>
               </div>
             )}
             
@@ -982,16 +990,12 @@ export default function App() {
                 <Heart className="w-5 h-5 text-pink-500" /> Support/Donate
               </a>
               {!isLoggedIn ? (
-                <button 
-                  onClick={() => { setView('login'); setShowMobileMenu(false); }} 
-                  className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-colors drop-shadow-sm ${
-                    lowSpecMode
-                      ? (backgroundImage ? 'text-white hover:bg-white/10' : 'text-red-600 hover:bg-red-50/20')
-                      : (backgroundImage ? 'text-white hover:bg-white/20' : 'text-red-600 hover:bg-red-50')
-                  }`}
-                >
-                  <Lock className="w-5 h-5" /> Login Admin
-                </button>
+                <div className={`p-3 text-[10px] uppercase font-black tracking-widest flex items-center gap-2 ${
+                  backgroundImage ? 'text-white/60' : 'text-slate-400'
+                }`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${backgroundImage ? 'bg-white/40' : 'bg-slate-400'}`} />
+                  Guest Mode Active
+                </div>
               ) : (
                 <button 
                   onClick={() => { toggleMaintenance(); setShowMobileMenu(false); }} 
@@ -1192,33 +1196,35 @@ export default function App() {
                   >
                     <RefreshCw className="w-4 h-4" />
                   </motion.button>
-                  <div className="relative group">
-                    <motion.button 
-                      {...hoverTapProps(1.05, 0.95)}
-                      className={`p-2 rounded-xl transition-colors duration-150 flex items-center justify-center cursor-pointer ${
-                        backgroundImage 
-                          ? 'text-white/80 hover:text-white hover:bg-white/10' 
-                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
-                      }`}
-                      title="More Options"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </motion.button>
-                    <div className={`absolute right-0 top-full mt-2 w-44 rounded-2xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-[60] transform origin-top-right scale-95 group-hover:scale-100 p-1 border ${
-                      lowSpecMode
-                        ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200')
-                        : (backgroundImage ? 'bg-slate-950/95 backdrop-blur-md border border-white/10 text-white shadow-xl' : 'bg-white border-slate-200')
-                    }`}>
-                      <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-600'}`} onClick={() => fetchFiles()}>
-                        <RefreshCw className="w-3.5 h-3.5 text-red-500" />
-                        Force Sync
-                      </button>
-                      <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-600'}`} onClick={navigateToHome}>
-                        <Home className="w-3.5 h-3.5 text-red-500" />
-                        Terminal Home
-                      </button>
+                  {isLoggedIn && (
+                    <div className="relative group">
+                      <motion.button 
+                        {...hoverTapProps(1.05, 0.95)}
+                        className={`p-2 rounded-xl transition-colors duration-150 flex items-center justify-center cursor-pointer ${
+                          backgroundImage 
+                            ? 'text-white/80 hover:text-white hover:bg-white/10' 
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
+                        }`}
+                        title="More Options"
+                      >
+                        <Menu className="w-4 h-4" />
+                      </motion.button>
+                      <div className={`absolute right-0 top-full mt-2 w-44 rounded-2xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-[60] transform origin-top-right scale-95 group-hover:scale-100 p-1 border ${
+                        lowSpecMode
+                          ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200 text-slate-800')
+                          : (backgroundImage ? 'bg-slate-950/95 backdrop-blur-md border border-white/10 text-white shadow-xl' : 'bg-white border-slate-200')
+                      }`}>
+                        <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-600'}`} onClick={() => fetchFiles()}>
+                          <RefreshCw className="w-3.5 h-3.5 text-red-500" />
+                          Force Sync
+                        </button>
+                        <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-600'}`} onClick={navigateToHome}>
+                          <Home className="w-3.5 h-3.5 text-red-500" />
+                          Terminal Home
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
