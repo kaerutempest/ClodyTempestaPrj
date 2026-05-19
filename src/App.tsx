@@ -714,22 +714,6 @@ export default function App() {
                         {uploadingBg ? 'Changing...' : 'Themes Background'}
                       </button>
 
-                      <button 
-                        className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${backgroundLocked ? 'text-slate-400 opacity-50 cursor-not-allowed' : 'text-slate-700 hover:bg-white/20'}`}
-                        onClick={() => {
-                          if (backgroundLocked) return;
-                          setShowAdminMenu(false);
-                          const url = prompt('Enter image URL for background (Imgur, Discord, etc):');
-                          if (url) {
-                            handleBackgroundUrl(url);
-                          }
-                        }}
-                        disabled={backgroundLocked}
-                      >
-                        <RefreshCw className="w-3.5 h-3.5 text-blue-500" />
-                        Set Theme URL
-                      </button>
-                      
                       {backgroundImage && (
                         <button 
                           className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center gap-2 ${backgroundLocked ? 'text-slate-400 opacity-50 cursor-not-allowed' : 'text-red-600 hover:bg-red-50/20'}`}
