@@ -1128,20 +1128,30 @@ export default function App() {
                  </div>
               </div>
 
-              {/* Breadcrumbs & Controls */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-2xl border shadow-sm grow transition-colors duration-150 overflow-x-auto whitespace-nowrap scrollbar-hide ${
-                  lowSpecMode
-                    ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-500')
-                    : (backgroundImage ? 'bg-slate-950/45 backdrop-blur-md border-white/10 text-white shadow-md' : 'bg-white border-slate-200 text-slate-500')
-                }`}>
+              {/* Breadcrumbs & Controls Unified Tablet */}
+              <div className={`flex items-center justify-between p-2 rounded-2xl border shadow-md w-full transition-all duration-150 relative z-20 ${
+                lowSpecMode
+                  ? (backgroundImage ? 'bg-slate-950/95 border-white/15 text-white' : 'bg-white border-slate-200 text-slate-800')
+                  : (backgroundImage ? 'bg-slate-950/75 backdrop-blur-md border-white/15 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-800')
+              }`}>
+                {/* Left side: Path trail */}
+                <div className="flex items-center gap-2 text-sm font-medium px-2 py-1.5 grow overflow-x-auto whitespace-nowrap scrollbar-hide min-w-0">
                   <FolderOpen className="w-4 h-4 text-red-500 shrink-0" />
-                  <span className={`hover:text-red-500 cursor-pointer transition-colors ${backgroundImage ? 'text-white/70 hover:text-white drop-shadow-sm' : ''}`} onClick={navigateToHome}>Listed App</span>
+                  <span 
+                    className={`hover:text-red-500 cursor-pointer font-bold transition-colors shrink-0 ${backgroundImage ? 'text-white hover:text-red-400 drop-shadow-xs' : 'text-slate-800'}`} 
+                    onClick={navigateToHome}
+                  >
+                    Listed App
+                  </span>
                   {folderStack.map((folder, i) => (
                     <React.Fragment key={folder.id}>
-                      <ChevronRight className={`w-4 h-4 shrink-0 ${backgroundImage ? 'text-white/40' : 'text-slate-300'}`} />
+                      <ChevronRight className={`w-3.5 h-3.5 shrink-0 ${backgroundImage ? 'text-white/40' : 'text-slate-400'}`} />
                       <span 
-                        className={`cursor-pointer hover:text-red-500 transition-colors ${i === folderStack.length - 1 ? (backgroundImage ? 'text-white font-black drop-shadow-md' : 'text-slate-900 font-bold') : (backgroundImage ? 'text-white/70 hover:text-white drop-shadow-sm' : '')}`}
+                        className={`cursor-pointer hover:text-red-500 transition-colors shrink-0 ${
+                          i === folderStack.length - 1 
+                            ? (backgroundImage ? 'text-white font-black drop-shadow-xs' : 'text-slate-900 font-bold') 
+                            : (backgroundImage ? 'text-white/70 hover:text-white drop-shadow-xs' : 'text-slate-500')
+                        }`}
                         onClick={() => {
                           const newStack = folderStack.slice(0, i + 1);
                           setFolderStack(newStack);
@@ -1154,58 +1164,59 @@ export default function App() {
                   ))}
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                {/* Right side: Button Controls */}
+                <div className={`flex items-center gap-1.5 shrink-0 pl-2 border-l ${backgroundImage ? 'border-white/10' : 'border-slate-100'}`}>
                   {folderStack.length > 0 && (
                     <motion.button 
                       {...hoverTapProps(1.05, 0.95)}
                       onClick={goBack}
-                      className={`p-2.5 rounded-2xl transition-colors duration-150 shadow-sm flex items-center justify-center border cursor-pointer ${
-                        lowSpecMode
-                          ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white hover:bg-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50')
-                          : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-white hover:bg-white/30' : 'bg-white border-slate-200 text-slate-600')
+                      className={`p-2 rounded-xl transition-colors duration-150 flex items-center justify-center cursor-pointer ${
+                        backgroundImage 
+                          ? 'text-white/80 hover:text-white hover:bg-white/10' 
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
                       }`}
                       title="Go Back"
                     >
-                      <ChevronRight className="w-5 h-5 rotate-180" />
+                      <ChevronRight className="w-4 h-4 rotate-180" />
                     </motion.button>
                   )}
                   <motion.button 
                     {...hoverTapProps(1.05, 0.95)}
                     onClick={() => fetchFiles()}
-                    className={`p-2.5 rounded-2xl transition-colors duration-150 shadow-sm flex items-center justify-center border cursor-pointer ${
-                      lowSpecMode
-                        ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white hover:bg-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50')
-                        : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-white hover:bg-white/30' : 'bg-white border-slate-200 text-slate-600')
+                    className={`p-2 rounded-xl transition-colors duration-150 flex items-center justify-center cursor-pointer ${
+                      backgroundImage 
+                        ? 'text-white/80 hover:text-white hover:bg-white/10' 
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
                     }`}
                     title="Refresh"
                   >
-                    <RefreshCw className="w-5 h-5" />
+                    <RefreshCw className="w-4 h-4" />
                   </motion.button>
                   <div className="relative group">
                     <motion.button 
                       {...hoverTapProps(1.05, 0.95)}
-                      className={`p-2.5 rounded-2xl transition-colors duration-150 shadow-sm flex items-center justify-center border cursor-pointer ${
-                        lowSpecMode
-                          ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white hover:bg-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50')
-                          : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-white hover:bg-white/30' : 'bg-white border-slate-200 text-slate-600')
+                      className={`p-2 rounded-xl transition-colors duration-150 flex items-center justify-center cursor-pointer ${
+                        backgroundImage 
+                          ? 'text-white/80 hover:text-white hover:bg-white/10' 
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
                       }`}
                       title="More Options"
                     >
-                      <MoreVertical className="w-5 h-5" />
+                      <MoreVertical className="w-4 h-4" />
                     </motion.button>
                     <div className={`absolute right-0 top-full mt-2 w-44 rounded-2xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-[60] transform origin-top-right scale-95 group-hover:scale-100 p-1 border ${
                       lowSpecMode
                         ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200')
-                        : (backgroundImage ? 'bg-slate-950/90 backdrop-blur-md border border-white/10 text-white shadow-xl' : 'bg-white border-slate-200')
+                        : (backgroundImage ? 'bg-slate-950/95 backdrop-blur-md border border-white/10 text-white shadow-xl' : 'bg-white border-slate-200')
                     }`}>
-                       <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-600'}`} onClick={() => fetchFiles()}>
-                          <RefreshCw className="w-3.5 h-3.5 text-red-500" />
-                          Force Sync
-                       </button>
-                       <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-600'}`} onClick={navigateToHome}>
-                          <Home className="w-3.5 h-3.5 text-red-500" />
-                          Terminal Home
-                       </button>
+                      <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-600'}`} onClick={() => fetchFiles()}>
+                        <RefreshCw className="w-3.5 h-3.5 text-red-500" />
+                        Force Sync
+                      </button>
+                      <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-600'}`} onClick={navigateToHome}>
+                        <Home className="w-3.5 h-3.5 text-red-500" />
+                        Terminal Home
+                      </button>
                     </div>
                   </div>
                 </div>
