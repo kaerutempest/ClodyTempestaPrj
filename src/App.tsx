@@ -25,6 +25,7 @@ import {
   Archive,
   Edit2,
   Wrench,
+  Settings,
   ArrowUp,
   ArrowDown,
   Github,
@@ -1068,11 +1069,13 @@ export default function App() {
                 <div className={`p-10 rounded-2xl border shadow-lg text-center transition-colors duration-150 ${
                   isDarkActive ? 'bg-slate-950 border-white/10 text-white' : 'bg-white border-slate-200'
                 }`}>
-                  <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 border transition-all ${isDarkActive ? 'bg-white/10 border-white/20 text-white' : 'bg-amber-50 border-amber-100 text-amber-500'}`}>
-                    <Wrench className="w-10 h-10" />
+                  <div className={`relative w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 border transition-all overflow-hidden ${isDarkActive ? 'bg-white/10 border-white/20 text-white' : 'bg-amber-50 border-amber-100 text-amber-500'}`}>
+                    <Settings className="w-12 h-12 absolute animate-[spin_10s_linear_infinite] opacity-30 text-amber-500" />
+                    <Lock className="w-8 h-8 relative z-10" />
                   </div>
-                  <h2 className={`text-2xl font-black uppercase tracking-tight drop-shadow-sm mb-4 ${isDarkActive ? 'text-white' : 'text-slate-800'}`}>Under Maintenance</h2>
-                  <p className={`text-sm font-bold uppercase tracking-widest mx-auto max-w-sm ${isDarkActive ? 'text-white/80' : 'text-slate-500'}`}>Cloud node is offline for upgrades. Please check back later.</p>
+                  <h2 className={`text-2xl font-black uppercase tracking-tight drop-shadow-sm mb-4 ${isDarkActive ? 'text-white' : 'text-slate-800'}`}>Sedang Dalam Pemeliharaan</h2>
+                  <p className={`text-sm font-bold uppercase tracking-widest mx-auto max-w-sm mb-2 ${isDarkActive ? 'text-white/80' : 'text-slate-500'}`}>Server sedang dioptimalkan agar layanan lebih baik.</p>
+                  <p className={`text-xs font-medium uppercase tracking-widest mx-auto max-w-sm animate-pulse ${isDarkActive ? 'text-white/50' : 'text-slate-400'}`}>Mohon tunggu sebentar...</p>
                 </div>
               </motion.div>
           ) : view === 'home' ? (
