@@ -28,7 +28,8 @@ import {
   ArrowUp,
   ArrowDown,
   Github,
-  Moon
+  Moon,
+  Sun
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -93,9 +94,12 @@ export default function App() {
 
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof localStorage !== 'undefined') {
-      return localStorage.getItem('admin_dark_mode') === 'true';
+      const stored = localStorage.getItem('admin_dark_mode');
+      if (stored !== null) {
+        return stored === 'true';
+      }
     }
-    return false;
+    return true;
   });
 
   const toggleDarkMode = () => {
@@ -106,7 +110,7 @@ export default function App() {
     });
   };
 
-  const isDarkActive = !!(backgroundImage || (isLoggedIn && darkMode));
+  const isDarkActive = !!(backgroundImage || darkMode);
 
   const animProps = (props: {
     initial?: any;
@@ -724,7 +728,8 @@ export default function App() {
             <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-md md:group-hover:scale-105 transition-transform duration-150 transform-gpu overflow-hidden ${
               isDarkActive ? 'bg-slate-900/40 backdrop-blur-md border border-white/10' : 'bg-linear-to-br from-slate-800 to-slate-900'
             }`}>
-              <Cloud className="w-4 h-4 text-slate-100 group-hover:scale-110 transition-transform duration-150" />
+              <Cloud className="w-4.5 h-4.5 text-slate-100 opacity-30 md:group-hover:scale-115 transition-transform duration-150" />
+              <Zap className="absolute inset-0 m-auto w-4 h-4 text-red-500 fill-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]" />
             </div>
             <span className={`text-base font-black tracking-tighter group-hover:text-red-500 transition-colors uppercase drop-shadow-sm ${isDarkActive ? 'text-white' : 'text-slate-800'}`}>Tempesta <span className={isDarkActive ? 'text-white/70 font-bold' : 'text-slate-400 font-medium'}>Cloudy</span></span>
           </div>
@@ -736,6 +741,24 @@ export default function App() {
             </nav>
             <div className={`h-5 w-px hidden md:block ${isDarkActive ? 'bg-white/20' : 'bg-slate-200'}`} />
             
+            {/* Dark Mode Toggle Logo/Icon */}
+            <motion.button 
+              {...hoverTapProps(1.1, 0.9)}
+              onClick={toggleDarkMode}
+              className={`p-2 rounded-xl transition-all cursor-pointer flex items-center justify-center ${
+                isDarkActive 
+                  ? 'bg-white/10 text-white border border-white/20 hover:bg-white/20' 
+                  : 'bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100'
+              }`}
+              title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {darkMode ? (
+                <Sun className="w-4.5 h-4.5 text-amber-500 fill-amber-300 animate-[spin_10s_linear_infinite]" />
+              ) : (
+                <Moon className="w-4.5 h-4.5 text-slate-700 fill-slate-300" />
+              )}
+            </motion.button>
+
             {/* Mobile Menu Toggle */}
             <button 
               className={`md:hidden p-2 rounded-xl transition-all ${isDarkActive ? 'bg-white/10 text-white border border-white/20 hover:bg-white/20 animate-none' : 'text-slate-600 hover:bg-slate-100 bg-slate-50'}`}
