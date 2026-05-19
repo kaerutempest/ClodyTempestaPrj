@@ -87,6 +87,55 @@ export default function App() {
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [activeItemMenu, setActiveItemMenu] = useState<string | null>(null);
+
+  const [lowSpecMode, setLowSpecMode] = useState(() => {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('low_spec_mode');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+    }
+    if (typeof window !== 'undefined' && window.navigator) {
+      const ua = window.navigator.userAgent.toLowerCase();
+      const isMobile = /iphone|ipad|ipod|android|blackberry|webos|iemobile|opera mini/i.test(ua);
+      const isTouch = 'ontouchstart' in window || window.navigator.maxTouchPoints > 0;
+      return isMobile || isTouch;
+    }
+    return false;
+  });
+
+  const toggleLowSpecMode = () => {
+    setLowSpecMode((prev) => {
+      const next = !prev;
+      localStorage.setItem('low_spec_mode', String(next));
+      return next;
+    });
+  };
+
+  const animProps = (props: {
+    initial?: any;
+    animate?: any;
+    exit?: any;
+    transition?: any;
+  }) => {
+    if (lowSpecMode) {
+      return {
+        initial: props.animate,
+        animate: props.animate,
+        exit: undefined,
+        transition: { duration: 0 }
+      };
+    }
+    return props;
+  };
+
+  const hoverTapProps = (scaleHover = 1.05, scaleTap = 0.95) => {
+    if (lowSpecMode) return {};
+    return {
+      whileHover: { scale: scaleHover },
+      whileTap: { scale: scaleTap }
+    };
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
   const adminMenuRef = useRef<HTMLDivElement>(null);
@@ -629,51 +678,98 @@ export default function App() {
 
   return (
     <div className={`min-h-screen transition-colors duration-500 w-full relative overflow-x-hidden ${backgroundImage ? 'bg-slate-900' : 'bg-slate-50'} text-slate-900 font-sans selection:bg-red-100 selection:text-red-900`}>
-      {/* Background Layer */}
+      {/* Background Layer (optimized for high FPS and smooth scrolling on CPU & GPU) */}
       <AnimatePresence>
         {backgroundImage && (
           <motion.div 
             key="custom-bg"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-0 pointer-events-none"
+            {...animProps({
+              initial: { opacity: 0 },
+              animate: { opacity: 1 },
+              exit: { opacity: 0 },
+              transition: { duration: 0.2, ease: "linear" }
+            })}
+            className="fixed inset-0 z-0 pointer-events-none overflow-hidden select-none touch-none transform-gpu"
+            style={{
+              transform: 'translate3d(0, 0, 0)',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              willChange: 'transform, opacity'
+            }}
           >
             <img 
               src={backgroundImage} 
               alt="Background" 
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover transform-gpu"
+              style={{
+                transform: 'translate3d(0, 0, 0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                willChange: 'transform'
+              }}
+              decoding="async"
+              loading="eager"
             />
             {/* Dark overlay to ensure text readability */}
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" />
+            <div 
+              className={`absolute inset-0 bg-slate-900/60 ${lowSpecMode ? '' : 'backdrop-blur-[2px]'}`} 
+              style={lowSpecMode ? {} : {
+                transform: 'translate3d(0, 0, 0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                willChange: 'backdrop-filter'
+              }}
+            />
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Header - Floating Blurry Tablet */}
       <header className="sticky top-4 z-50 px-4 mb-6">
-        <div className={`max-w-6xl mx-auto h-14 px-4 flex items-center justify-between rounded-2xl border transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20 shadow-sm' : 'bg-white/90 backdrop-blur-md border-slate-200 shadow-sm'}`}>
+        <div className={`max-w-6xl mx-auto h-14 px-4 flex items-center justify-between rounded-2xl border transition-[colors,transform,shadow] duration-150 transform-gpu ${
+          lowSpecMode 
+            ? (backgroundImage ? 'bg-slate-950/95 border-white/10 text-white shadow-md' : 'bg-white border-slate-200 text-slate-800 shadow-sm')
+            : (backgroundImage ? 'bg-white/20 backdrop-blur-md max-md:backdrop-blur-[3px] border-white/20 shadow-sm text-white' : 'bg-white/90 backdrop-blur-md max-md:backdrop-blur-[3px] border-slate-200 shadow-sm text-slate-800')
+        }`}>
           <div 
             className="flex items-center gap-3 cursor-pointer group" 
             onClick={navigateToHome}
           >
-            <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-all duration-300 overflow-hidden transform-gpu ${backgroundImage ? 'bg-slate-900/40 backdrop-blur-md border border-white/10' : 'bg-linear-to-br from-slate-800 to-slate-900'}`}>
-              <Cloud className="w-4 h-4 text-slate-100 opacity-40 group-hover:opacity-60 transition-opacity" />
-              <Zap className="absolute inset-0 m-auto w-4 h-4 text-red-500 fill-red-500 group-hover:scale-110 transition-all drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+            <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-md ${lowSpecMode ? '' : 'md:group-hover:scale-105 transition-transform duration-150 transform-gpu'} overflow-hidden ${
+              lowSpecMode
+                ? (backgroundImage ? 'bg-slate-900 border-white/10' : 'bg-slate-800')
+                : (backgroundImage ? 'bg-slate-900/40 backdrop-blur-md border border-white/10' : 'bg-linear-to-br from-slate-800 to-slate-900')
+            }`}>
+              <Cloud className="w-4 h-4 text-slate-100 opacity-40" />
+              <Zap className="absolute inset-0 m-auto w-4 h-4 text-red-500 fill-red-500 group-hover:scale-110 transition-transform duration-150" />
             </div>
             <span className={`text-base font-black tracking-tighter group-hover:text-red-500 transition-colors uppercase drop-shadow-sm ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>Tempesta <span className={backgroundImage ? 'text-white/70 font-bold' : 'text-slate-400 font-medium'}>Cloudy</span></span>
           </div>
           
-          <div className="flex items-center gap-3 md:gap-5">
-            <nav className={`hidden md:flex items-center gap-5 text-[10px] font-black uppercase tracking-widest drop-shadow-sm ${backgroundImage ? 'text-white' : 'text-slate-600'}`}>
-              <button onClick={navigateToHome} className="hover:text-red-400 transition-colors flex items-center gap-2"><Home className="w-3.5 h-3.5"/> Beranda</button>
-              <a href="https://saweria.co/Kaedesu" target="_blank" className="hover:text-pink-400 transition-colors flex items-center gap-2"><Heart className="w-3.5 h-3.5"/> Donate</a>
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Performance/Battery Saver Toggle */}
+            <button 
+              onClick={toggleLowSpecMode}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors border shadow-xs cursor-pointer ${
+                lowSpecMode 
+                  ? 'bg-amber-500/20 text-amber-500 border-amber-500/30 hover:bg-amber-500/30 shadow-sm'
+                  : (backgroundImage ? 'bg-white/10 text-white/90 border-white/25 hover:bg-white/20' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200')
+              }`}
+              title={lowSpecMode ? "Nyalakan Grafis Tinggi" : "Nyalakan Mode Lag-Free (HP Kentang)"}
+            >
+              <Zap className={`w-3.5 h-3.5 ${lowSpecMode ? 'text-amber-400 fill-amber-400 animate-pulse' : 'text-slate-400'}`} />
+              <span className="hidden sm:inline-block">{lowSpecMode ? 'Hemat Baterai/FPS: On' : 'Bebas Lag: Off'}</span>
+            </button>
+
+            <nav className={`hidden md:flex items-center gap-4 text-[10px] font-black uppercase tracking-widest drop-shadow-sm ${backgroundImage ? 'text-white font-black' : 'text-slate-600'}`}>
+              <button onClick={navigateToHome} className="hover:text-red-400 transition-colors flex items-center gap-2 cursor-pointer"><Home className="w-3.5 h-3.5"/> Beranda</button>
+              <a href="https://saweria.co/Kaedesu" target="_blank" className="hover:text-pink-400 transition-colors flex items-center gap-2 cursor-pointer"><Heart className="w-3.5 h-3.5"/> Donate</a>
             </nav>
             <div className={`h-5 w-px hidden md:block ${backgroundImage ? 'bg-white/20' : 'bg-slate-200'}`} />
             
             {/* Mobile Menu Toggle */}
             <button 
-              className={`md:hidden p-2 rounded-xl transition-all active:scale-95 ${backgroundImage ? 'bg-white/10 text-white border border-white/20 hover:bg-white/20' : 'text-slate-600 hover:bg-slate-100 bg-slate-50'}`}
+              className={`md:hidden p-2 rounded-xl transition-all ${backgroundImage ? 'bg-white/10 text-white border border-white/20 hover:bg-white/20 animate-none' : 'text-slate-600 hover:bg-slate-100 bg-slate-50'}`}
               onClick={() => setShowMobileMenu(!showMobileMenu)}
             >
               {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -683,7 +779,11 @@ export default function App() {
               <div className="relative" ref={adminMenuRef}>
                 <button 
                   onClick={() => setShowAdminMenu(!showAdminMenu)}
-                  className={`flex items-center gap-2 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border shadow-sm ${backgroundImage ? 'bg-white/20 backdrop-blur-md text-white border-white/20 hover:bg-white/30 drop-shadow-sm' : 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100'}`}
+                  className={`flex items-center gap-2 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all border shadow-sm ${
+                    lowSpecMode
+                      ? (backgroundImage ? 'bg-slate-800 border-slate-700 text-white hover:bg-slate-700' : 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100')
+                      : (backgroundImage ? 'bg-white/20 backdrop-blur-md text-white border-white/20 hover:bg-white/30 drop-shadow-sm' : 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100')
+                  }`}
                 >
                    <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${backgroundImage ? 'bg-white' : 'bg-red-500'}`} />
                    Admin
@@ -692,11 +792,17 @@ export default function App() {
                 <AnimatePresence>
                   {showAdminMenu && (
                     <motion.div 
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                      className={`absolute right-0 mt-2 w-48 border rounded-xl shadow-lg p-1 z-[60] overflow-hidden ${backgroundImage ? 'bg-white/40 backdrop-blur-sm border-white/30' : 'bg-white border-slate-200'}`}
+                      {...animProps({
+                        initial: { opacity: 0, y: 10, scale: 0.95 },
+                        animate: { opacity: 1, y: 0, scale: 1 },
+                        exit: { opacity: 0, y: 10, scale: 0.95 },
+                        transition: { duration: 0.2, ease: "easeOut" }
+                      })}
+                      className={`absolute right-0 mt-2 w-48 border rounded-xl shadow-lg p-1 z-[60] overflow-hidden ${
+                        lowSpecMode
+                          ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200 text-slate-800')
+                          : (backgroundImage ? 'bg-white/40 backdrop-blur-sm border-white/30 text-white shadow-lg' : 'bg-white border-slate-200')
+                      }`}
                     >
                       <div className="px-3 py-2 text-[10px] uppercase tracking-widest text-slate-400 font-bold border-b border-slate-50/10 mb-1">
                         Display Settings
@@ -789,7 +895,7 @@ export default function App() {
                 <span className="hidden sm:inline-block text-[10px] font-black bg-slate-100 text-slate-500 px-2.5 py-1 rounded uppercase tracking-[0.1em]">Guest</span>
                 <button 
                   onClick={() => setView('login')}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors cursor-pointer"
                 >
                   <Lock className="w-3.5 h-3.5" />
                   Login
@@ -816,23 +922,37 @@ export default function App() {
       <AnimatePresence>
         {showMobileMenu && (
           <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className={`md:hidden border-b overflow-hidden z-40 relative ${backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20' : 'bg-white border-slate-200'}`}
+            {...animProps({
+              initial: { opacity: 0, height: 0 },
+              animate: { opacity: 1, height: 'auto' },
+              exit: { opacity: 0, height: 0 },
+              transition: { duration: 0.15, ease: "easeOut" }
+            })}
+            className={`md:hidden border-b overflow-hidden z-40 relative ${
+              lowSpecMode
+                ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-800')
+                : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20' : 'bg-white border-slate-200')
+            }`}
           >
             <div className="px-4 py-4 space-y-4">
               <button 
                 onClick={() => { navigateToHome(); setShowMobileMenu(false); }} 
-                className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-all drop-shadow-sm ${backgroundImage ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50'}`}
+                className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-colors drop-shadow-sm ${
+                  lowSpecMode
+                    ? (backgroundImage ? 'text-white hover:bg-white/10' : 'text-slate-700 hover:bg-slate-50')
+                    : (backgroundImage ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50')
+                }`}
               >
                 <Home className="w-5 h-5 text-red-500" /> Beranda
               </button>
               <a 
                 href="https://saweria.co/Kaedesu" 
                 target="_blank" 
-                className={`block w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-all drop-shadow-sm ${backgroundImage ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50'}`}
+                className={`block w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-colors drop-shadow-sm ${
+                  lowSpecMode
+                    ? (backgroundImage ? 'text-white hover:bg-white/10' : 'text-slate-700 hover:bg-slate-50')
+                    : (backgroundImage ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50')
+                }`}
                 onClick={() => setShowMobileMenu(false)}
               >
                 <Heart className="w-5 h-5 text-pink-500" /> Support/Donate
@@ -840,14 +960,24 @@ export default function App() {
               {!isLoggedIn ? (
                 <button 
                   onClick={() => { setView('login'); setShowMobileMenu(false); }} 
-                  className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-all drop-shadow-sm ${backgroundImage ? 'text-white hover:bg-white/20' : 'text-red-600 hover:bg-red-50'}`}
+                  className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-colors drop-shadow-sm ${
+                    lowSpecMode
+                      ? (backgroundImage ? 'text-white hover:bg-white/10' : 'text-red-600 hover:bg-red-50/20')
+                      : (backgroundImage ? 'text-white hover:bg-white/20' : 'text-red-600 hover:bg-red-50')
+                  }`}
                 >
                   <Lock className="w-5 h-5" /> Login Admin
                 </button>
               ) : (
                 <button 
                   onClick={() => { toggleMaintenance(); setShowMobileMenu(false); }} 
-                  className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-all drop-shadow-sm ${maintenanceMode ? 'text-amber-500 hover:bg-amber-500/10' : (backgroundImage ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50')}`}
+                  className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-colors drop-shadow-sm ${
+                    maintenanceMode 
+                      ? 'text-amber-500 hover:bg-amber-500/10' 
+                      : (lowSpecMode 
+                          ? (backgroundImage ? 'text-white hover:bg-white/10' : 'text-slate-700 hover:bg-slate-50')
+                          : (backgroundImage ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50'))
+                  }`}
                 >
                   <Wrench className="w-5 h-5" /> {maintenanceMode ? 'Maintenance: ON' : 'Maintenance: OFF'}
                 </button>
@@ -862,22 +992,30 @@ export default function App() {
           {view === 'login' ? (
               <motion.div
                 key="login"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
+                {...animProps({
+                  initial: { opacity: 0, y: 10 },
+                  animate: { opacity: 1, y: 0 },
+                  exit: { opacity: 0, y: -10 }
+                })}
                 className="max-w-sm mx-auto pt-20"
               >
-                <div className={`p-8 rounded-2xl border shadow-lg transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200'}`}>
+                <div className={`p-8 rounded-2xl border shadow-lg transition-colors duration-150 ${
+                  lowSpecMode
+                    ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200 text-slate-800')
+                    : (backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200')
+                }`}>
                   <div className="text-center mb-6">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 border transition-all ${backgroundImage ? 'bg-white/10 border-white/20 text-white' : 'bg-slate-100 border-slate-200 text-slate-400'}`}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 border transition-colors duration-150 ${backgroundImage ? 'bg-white/10 border-white/20 text-white' : 'bg-slate-100 border-slate-200 text-slate-400'}`}>
                       <Lock className="w-6 h-6" />
                     </div>
                     <h2 className={`text-xl font-black uppercase tracking-tight drop-shadow-sm ${backgroundImage ? 'text-white' : 'text-slate-800'}`}>Admin Login</h2>
                     <p className={`text-xs font-bold uppercase tracking-widest mt-2 drop-shadow-sm ${backgroundImage ? 'text-white/80' : 'text-slate-400'}`}>Authorization Protocol</p>
                     {loginError && (
                       <motion.p 
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        {...animProps({
+                          initial: { opacity: 0, scale: 0.9 },
+                          animate: { opacity: 1, scale: 1 }
+                        })}
                         className="text-red-500 text-[10px] font-black uppercase tracking-widest mt-4 bg-red-500/10 py-2 rounded-xl border border-red-500/20 shadow-sm"
                       >
                         Access Denied: Invalid Key
@@ -892,7 +1030,7 @@ export default function App() {
                       onChange={(e) => setLoginInput(e.target.value)}
                       disabled={isLoggingIn}
                       placeholder="Access Key" 
-                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${backgroundImage ? 'bg-white/20 border-white/30 focus:bg-white/40 focus:border-red-500 text-slate-900 placeholder-slate-700' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/20 focus:border-red-50'} ${loginError ? 'border-red-500/50' : ''}`}
+                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${backgroundImage ? 'bg-white/20 border-white/30 focus:bg-white/40 focus:border-red-400 text-slate-900 placeholder-slate-700' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/20 focus:border-red-50'} ${loginError ? 'border-red-500/50' : ''}`}
                       autoFocus
                     />
                     <button 
@@ -915,12 +1053,18 @@ export default function App() {
           ) : maintenanceMode && !isLoggedIn ? (
               <motion.div
                 key="maintenance"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
+                {...animProps({
+                  initial: { opacity: 0, scale: 0.98 },
+                  animate: { opacity: 1, scale: 1 },
+                  exit: { opacity: 0, scale: 0.98 }
+                })}
                 className="max-w-lg mx-auto pt-20"
               >
-                <div className={`p-10 rounded-2xl border shadow-lg text-center transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200'}`}>
+                <div className={`p-10 rounded-2xl border shadow-lg text-center transition-colors duration-150 ${
+                  lowSpecMode
+                    ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white' : 'bg-white border-slate-200')
+                    : (backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200')
+                }`}>
                   <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 border transition-all ${backgroundImage ? 'bg-white/10 border-white/20 text-white' : 'bg-amber-50 border-amber-100 text-amber-500'}`}>
                     <Wrench className="w-10 h-10" />
                   </div>
@@ -931,28 +1075,42 @@ export default function App() {
           ) : view === 'home' ? (
             <motion.div
               key="home"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              {...animProps({
+                initial: { opacity: 0 },
+                animate: { opacity: 1 },
+                exit: { opacity: 0 }
+              })}
               className="space-y-6"
             >
               {/* Support Banner - ItsNoMercy style */}
-              <div className={`rounded-2xl p-6 text-white relative overflow-hidden group transition-all duration-300 border transform-gpu ${backgroundImage ? 'bg-red-600/50 backdrop-blur-md border-red-400/20 shadow-md shadow-red-900/10' : 'bg-red-600 border-red-700'}`}>
-                 <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform">
+              <div className={`rounded-2xl p-6 text-white relative overflow-hidden group transition-[colors,transform] duration-150 border ${
+                lowSpecMode
+                  ? (backgroundImage ? 'bg-red-950/95 border-red-900/40 shadow-xs' : 'bg-red-600 border-red-700')
+                  : (backgroundImage ? 'bg-red-600/50 backdrop-blur-md border-red-400/20 shadow-md shadow-red-900/10' : 'bg-red-600 border-red-700')
+              }`}>
+                 <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-150">
                     <Heart className="w-24 h-24" />
                  </div>
                  <div className="relative z-10 space-y-2">
-                    <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2">SUPPORT US! 🔥</h2>
+                    <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2 animate-none">SUPPORT US! 🔥</h2>
                     <p className={`text-sm max-w-lg font-bold ${backgroundImage ? 'text-white' : 'text-red-100'}`}>Support kami agar bisa terus melakukan update setiap hari dan tetap menyediakan layanan gratis!</p>
                     <div className="flex gap-3 pt-3">
-                       <a href="https://saweria.co/Kaedesu" target="_blank" className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${backgroundImage ? 'bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/20' : 'bg-white text-red-600 hover:bg-red-50'}`}>Saweria</a>
+                       <a href="https://saweria.co/Kaedesu" target="_blank" className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${
+                         lowSpecMode
+                           ? (backgroundImage ? 'bg-slate-800 text-white border border-slate-700 hover:bg-slate-700' : 'bg-white text-red-650 hover:bg-slate-100')
+                           : (backgroundImage ? 'bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/20' : 'bg-white text-red-600 hover:bg-red-50')
+                       }`}>Saweria</a>
                     </div>
                  </div>
               </div>
 
               {/* Breadcrumbs & Controls */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-2xl border shadow-sm grow transition-all duration-300 transform-gpu overflow-x-auto whitespace-nowrap scrollbar-hide ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20 text-white' : 'bg-white border-slate-200 text-slate-500'}`}>
+                <div className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-2xl border shadow-sm grow transition-colors duration-150 overflow-x-auto whitespace-nowrap scrollbar-hide ${
+                  lowSpecMode
+                    ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-500')
+                    : (backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20 text-white' : 'bg-white border-slate-200 text-slate-500')
+                }`}>
                   <FolderOpen className="w-4 h-4 text-red-500 shrink-0" />
                   <span className={`hover:text-red-500 cursor-pointer transition-colors ${backgroundImage ? 'text-white/70 hover:text-white drop-shadow-sm' : ''}`} onClick={navigateToHome}>Listed App</span>
                   {folderStack.map((folder, i) => (
@@ -975,39 +1133,52 @@ export default function App() {
                 <div className="flex items-center gap-2 shrink-0">
                   {folderStack.length > 0 && (
                     <motion.button 
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      {...hoverTapProps(1.05, 0.95)}
                       onClick={goBack}
-                      className={`p-2.5 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center border ${backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-slate-900' : 'bg-white border-slate-200 text-slate-600'}`}
+                      className={`p-2.5 rounded-2xl transition-colors duration-150 shadow-sm flex items-center justify-center border cursor-pointer ${
+                        lowSpecMode
+                          ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white hover:bg-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50')
+                          : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-slate-900 hover:bg-white/30' : 'bg-white border-slate-200 text-slate-600')
+                      }`}
                       title="Go Back"
                     >
                       <ChevronRight className="w-5 h-5 rotate-180" />
                     </motion.button>
                   )}
                   <motion.button 
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    {...hoverTapProps(1.05, 0.95)}
                     onClick={() => fetchFiles()}
-                    className={`p-2.5 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center border ${backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-slate-900' : 'bg-white border-slate-200 text-slate-600'}`}
+                    className={`p-2.5 rounded-2xl transition-colors duration-150 shadow-sm flex items-center justify-center border cursor-pointer ${
+                      lowSpecMode
+                        ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white hover:bg-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50')
+                        : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-slate-900 hover:bg-white/30' : 'bg-white border-slate-200 text-slate-600')
+                    }`}
                     title="Refresh"
                   >
                     <RefreshCw className="w-5 h-5" />
                   </motion.button>
                   <div className="relative group">
                     <motion.button 
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className={`p-2.5 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center border ${backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-slate-900' : 'bg-white border-slate-200 text-slate-600'}`}
+                      {...hoverTapProps(1.05, 0.95)}
+                      className={`p-2.5 rounded-2xl transition-colors duration-150 shadow-sm flex items-center justify-center border cursor-pointer ${
+                        lowSpecMode
+                          ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white hover:bg-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50')
+                          : (backgroundImage ? 'bg-white/20 backdrop-blur-sm border-white/20 text-slate-900 hover:bg-white/30' : 'bg-white border-slate-200 text-slate-600')
+                      }`}
                       title="More Options"
                     >
                       <MoreVertical className="w-5 h-5" />
                     </motion.button>
-                    <div className={`absolute right-0 top-full mt-2 w-44 rounded-2xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[60] transform origin-top-right scale-95 group-hover:scale-100 p-1 border ${backgroundImage ? 'bg-white/40 backdrop-blur-sm border-white/30' : 'bg-white border-slate-200'}`}>
-                       <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white drop-shadow-sm' : 'text-slate-600'}`} onClick={() => fetchFiles()}>
+                    <div className={`absolute right-0 top-full mt-2 w-44 rounded-2xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-[60] transform origin-top-right scale-95 group-hover:scale-100 p-1 border ${
+                      lowSpecMode
+                        ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200')
+                        : (backgroundImage ? 'bg-white/40 backdrop-blur-sm border-white/30' : 'bg-white border-slate-200')
+                    }`}>
+                       <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-600'}`} onClick={() => fetchFiles()}>
                           <RefreshCw className="w-3.5 h-3.5 text-red-500" />
                           Force Sync
                        </button>
-                       <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white drop-shadow-sm' : 'text-slate-600'}`} onClick={navigateToHome}>
+                       <button className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/10 rounded-xl transition-colors flex items-center gap-2 ${backgroundImage ? 'text-white' : 'text-slate-600'}`} onClick={navigateToHome}>
                           <Home className="w-3.5 h-3.5 text-red-500" />
                           Terminal Home
                        </button>
@@ -1017,9 +1188,13 @@ export default function App() {
               </div>
 
               {/* Main Container */}
-              <div className={`rounded-2xl shadow-md overflow-hidden min-h-[400px] transition-all duration-300 relative z-10 border transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200'}`}>
+              <div className={`rounded-2xl shadow-md overflow-hidden min-h-[400px] transition-colors duration-150 relative z-10 border ${
+                lowSpecMode
+                  ? (backgroundImage ? 'bg-slate-950/95 border-white/10 shadow-2xl' : 'bg-white border-slate-200')
+                  : (backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200')
+              }`}>
                 {/* Control Bar */}
-                <div className={`p-4 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all ${backgroundImage ? 'border-white/10' : 'border-slate-100'}`}>
+                <div className={`p-4 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors duration-150 ${backgroundImage ? 'border-white/10' : 'border-slate-100'}`}>
                   <div className="relative flex-1 max-w-md">
                     <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${backgroundImage ? 'text-white/60' : 'text-slate-400'}`} />
                     <input 
@@ -1027,7 +1202,11 @@ export default function App() {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search files..." 
-                      className={`pl-10 pr-4 py-2 border rounded-xl text-sm w-full outline-none transition-all font-bold ${backgroundImage ? 'bg-white/10 border-white/20 text-white placeholder-white/50 focus:bg-white/20 focus:border-red-400' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/10 focus:border-red-500'}`}
+                      className={`pl-10 pr-4 py-2 border rounded-xl text-sm w-full outline-none transition-colors duration-150 font-bold ${
+                        lowSpecMode
+                          ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white placeholder-white/30 focus:border-red-400 shadow-sm' : 'bg-slate-50 border-slate-200 focus:border-red-500 text-slate-800')
+                          : (backgroundImage ? 'bg-white/10 border-white/20 text-white placeholder-white/50 focus:bg-white/20 focus:border-red-400' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/10 focus:border-red-500')
+                      }`}
                     />
                   </div>
                   
@@ -1035,7 +1214,11 @@ export default function App() {
                     <div className="flex items-center gap-2">
                       <button 
                          onClick={() => setShowFolderInput(!showFolderInput)}
-                         className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all ${backgroundImage ? 'bg-white/20 hover:bg-white/30 border border-white/20 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'}`}
+                         className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors duration-150 cursor-pointer ${
+                           lowSpecMode
+                             ? (backgroundImage ? 'bg-slate-900 border-white/10 hover:bg-slate-800 text-white border' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200')
+                             : (backgroundImage ? 'bg-white/20 hover:bg-white/30 border border-white/20 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200')
+                         }`}
                       >
                          <FolderOpen className="w-3.5 h-3.5 text-amber-500" />
                          Directory
@@ -1043,7 +1226,7 @@ export default function App() {
                       <button 
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
-                        className="bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-red-700 transition-all active:scale-95 disabled:opacity-50 shadow-lg shadow-red-600/20"
+                        className="bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-red-700 transition-colors duration-150 active:scale-95 disabled:opacity-50 shadow-lg shadow-red-600/20 cursor-pointer"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         {uploading ? `${uploadProgress}%` : 'Upload'}
@@ -1083,12 +1266,12 @@ export default function App() {
                   {filteredFiles.map((file, index) => (
                     <div 
                       key={file.id}
-                      className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 items-center px-6 py-3.5 transition-colors group cursor-pointer ${backgroundImage ? 'hover:bg-white/20' : 'hover:bg-slate-50'}`}
+                      className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 items-center px-6 py-3.5 transition-colors group cursor-pointer ${backgroundImage ? 'hover:bg-white/10' : 'hover:bg-slate-50'}`}
                       onClick={() => file.type === 'folder' ? enterFolder(file) : window.location.href = `/download/${file.id}`}
                     >
                        <div className="flex items-center gap-3 min-w-0 pr-2 grow">
                           {isLoggedIn && !searchTerm && (
-                            <div className="flex flex-col gap-0 opacity-0 group-hover:opacity-100 transition-opacity justify-center shrink-0">
+                            <div className="flex flex-col gap-0 opacity-0 group-hover:opacity-100 transition-opacity justify-center shrink-0 font-medium">
                               <button
                                 onClick={(e) => moveFile(e, index, 'up')}
                                 disabled={index === 0}
@@ -1105,7 +1288,7 @@ export default function App() {
                               </button>
                             </div>
                           )}
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-sm ${file.type === 'folder' ? (backgroundImage ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-amber-50 text-amber-500') : (backgroundImage ? 'bg-red-400/20 text-red-300 border border-red-400/30' : 'bg-red-50 text-red-500')}`}>
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm ${lowSpecMode ? '' : 'group-hover:scale-105 transition-transform'} ${file.type === 'folder' ? (backgroundImage ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-amber-50 text-amber-500') : (backgroundImage ? 'bg-red-400/20 text-red-300 border border-red-400/30' : 'bg-red-50 text-red-500')}`}>
                              {file.type === 'folder' ? <FolderOpen className="w-4 h-4" /> : <File className="w-4 h-4" />}
                           </div>
                           {renamingFileId === file.id ? (
@@ -1228,15 +1411,25 @@ export default function App() {
           ) : (
             <motion.div
               key="download"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
+              {...animProps({
+                initial: { opacity: 0, scale: 0.98 },
+                animate: { opacity: 1, scale: 1 },
+                exit: { opacity: 0, scale: 0.98 }
+              })}
               className="max-w-2xl mx-auto space-y-6"
             >
-              <div className={`rounded-2xl shadow-lg overflow-hidden relative z-10 border transition-all duration-300 transform-gpu ${backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20' : 'bg-white border-slate-200'}`}>
+              <div className={`rounded-2xl shadow-lg overflow-hidden relative z-10 border transition-colors duration-150 ${
+                lowSpecMode
+                  ? (backgroundImage ? 'bg-slate-950 border-white/10 text-white' : 'bg-white border-slate-200')
+                  : (backgroundImage ? 'bg-white/20 backdrop-blur-md border-white/20 text-white' : 'bg-white border-slate-200')
+              }`}>
                 <div className="h-2 bg-red-600" />
                 <div className="p-8 md:p-12 text-center space-y-8">
-                  <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto transition-all border shadow-inner ${backgroundImage ? 'bg-white/10 border-white/20 text-white drop-shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                  <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto transition-colors border shadow-inner ${
+                    lowSpecMode
+                      ? (backgroundImage ? 'bg-slate-900 border-white/10 text-white drop-shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400')
+                      : (backgroundImage ? 'bg-white/10 border-white/20 text-white drop-shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400')
+                  }`}>
                     <File className="w-10 h-10" />
                   </div>
                   
