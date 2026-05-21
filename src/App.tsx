@@ -149,7 +149,7 @@ export default function App() {
 
   useEffect(() => {
     fetchSettings();
-    const interval = setInterval(fetchSettings, 30000); // Check every 30s
+    const interval = setInterval(fetchSettings, 5000); // Check every 5s for fast maintenance sync
     return () => clearInterval(interval);
   }, []);
 
@@ -1053,7 +1053,7 @@ export default function App() {
                       onChange={(e) => setLoginInput(e.target.value)}
                       disabled={isLoggingIn}
                       placeholder="Access Key" 
-                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${isDarkActive ? 'bg-white/20 border-white/30 focus:bg-white/40 focus:border-red-400 text-white placeholder-slate-450' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/20 focus:border-red-50'} ${loginError ? 'border-red-500/50' : ''}`}
+                      className={`w-full px-4 py-3 border rounded-xl outline-none transition-all text-sm font-bold ${isDarkActive ? 'bg-white/20 border-white/30 focus:bg-white/40 focus:border-red-400 text-white placeholder-white/50' : 'bg-slate-50 border-slate-300 text-slate-950 placeholder-slate-500 focus:ring-2 focus:ring-red-500/25 focus:border-red-500'} ${loginError ? 'border-red-500/50' : ''}`}
                       autoFocus
                     />
                     <button 
@@ -1229,7 +1229,7 @@ export default function App() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search files..." 
                       className={`pl-10 pr-4 py-2 border rounded-xl text-sm w-full outline-none transition-colors duration-150 font-bold ${
-                        isDarkActive ? 'bg-white/10 border-white/20 text-white placeholder-white/50 focus:bg-white/20 focus:border-red-400' : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-red-500/10 focus:border-red-500'
+                        isDarkActive ? 'bg-white/10 border-white/20 text-white placeholder-white/50 focus:bg-white/20 focus:border-red-400' : 'bg-slate-50 border-slate-300 text-slate-950 placeholder-slate-500 focus:ring-2 focus:ring-red-500/15 focus:border-red-500'
                       }`}
                     />
                   </div>
@@ -1260,17 +1260,18 @@ export default function App() {
 
                 {showFolderInput && (
                   <div className={`p-4 border-b ${
-                    isDarkActive ? 'bg-slate-900/60 border-white/10 text-white' : 'bg-slate-50 border-slate-100 text-slate-800'
+                    isDarkActive ? 'bg-slate-900/80 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-950 shadow-inner'
                   }`}>
                     <form onSubmit={handleFolderCreate} className="flex gap-2">
                        <input 
                         name="folderName"
                         type="text"
+                        required
                         placeholder="Folder Name"
-                        className={`flex-1 px-3 py-1.5 border rounded-lg text-sm outline-none transition-colors duration-150 ${
+                        className={`flex-1 px-3 py-1.5 border rounded-lg text-sm outline-none transition-colors duration-150 font-black ${
                           isDarkActive 
-                            ? 'bg-slate-950 border-white/20 text-white placeholder-white/40 focus:border-red-500' 
-                            : 'bg-white border-slate-200 text-slate-800 placeholder-slate-400 focus:border-red-500'
+                            ? 'bg-slate-950 border-white/30 text-white placeholder-white/50 focus:border-red-500' 
+                            : 'bg-white border-slate-400 text-black placeholder-slate-500 focus:ring-2 focus:ring-red-500/20 focus:border-red-500'
                         }`}
                         autoFocus
                         disabled={isCreatingFolder}
@@ -1338,7 +1339,7 @@ export default function App() {
                                 type="text"
                                 value={renameInput}
                                 onChange={(e) => setRenameInput(e.target.value)}
-                                className={`flex-1 px-3 py-1 border rounded-lg text-sm font-bold outline-none ${isDarkActive ? 'bg-white/20 border-white/30 text-white placeholder-white/50 focus:border-red-400 focus:bg-white/30' : 'bg-white border-slate-200 text-slate-800 focus:border-red-500'}`}
+                                className={`flex-1 px-3 py-1 border rounded-lg text-sm font-black outline-none ${isDarkActive ? 'bg-white/20 border-white/30 text-white placeholder-white/50 focus:border-red-400 focus:bg-white/30' : 'bg-white border-slate-300 text-black placeholder-slate-500 focus:border-red-500'}`}
                                 autoFocus
                                 onClick={(e) => e.stopPropagation()}
                               />
@@ -1476,7 +1477,7 @@ export default function App() {
                             type="text"
                             value={renameInput}
                             onChange={(e) => setRenameInput(e.target.value)}
-                            className={`flex-1 w-full min-w-[200px] px-3 py-1.5 border rounded-lg text-lg font-black outline-none ${isDarkActive ? 'bg-white/20 border-white/30 text-white placeholder-white/50 focus:border-red-400 focus:bg-white/30' : 'bg-white border-slate-200 text-slate-800 focus:border-red-500'}`}
+                            className={`flex-1 w-full min-w-[200px] px-3 py-1.5 border rounded-lg text-lg font-black outline-none ${isDarkActive ? 'bg-white/20 border-white/30 text-white placeholder-white/50 focus:border-red-400 focus:bg-white/30' : 'bg-white border-slate-300 text-black placeholder-slate-500 focus:border-red-500'}`}
                             autoFocus
                           />
                           <div className="flex gap-2 w-full justify-center sm:w-auto">
