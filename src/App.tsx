@@ -85,6 +85,7 @@ export default function App() {
   const [renameInput, setRenameInput] = useState('');
   const [backgroundImage, setBackgroundImage] = useState('');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [backgroundLocked, setBackgroundLocked] = useState(false);
   const [uploadingBg, setUploadingBg] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
@@ -141,6 +142,8 @@ export default function App() {
       setBackgroundLocked(!!data.backgroundLocked);
     } catch (err) {
       console.error('Failed to fetch settings', err);
+    } finally {
+      setIsLoadingSettings(false);
     }
   };
 
@@ -667,6 +670,20 @@ export default function App() {
   const filteredFiles = files.filter(f => 
     f.originalName.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isLoadingSettings) {
+    return (
+      <div className={`min-h-screen w-full flex flex-col items-center justify-center transition-colors duration-500 ${isDarkActive ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'} font-sans`}>
+        <div className="text-center space-y-4">
+          <div className="relative w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md mx-auto overflow-hidden animate-pulse bg-linear-to-br from-slate-800 to-slate-900">
+            <Cloud className="w-5 h-5 text-slate-100 opacity-40" />
+            <Zap className="absolute inset-0 m-auto w-4.5 h-4.5 text-red-500 fill-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]" />
+          </div>
+          <span className="text-sm font-black tracking-widest uppercase opacity-70">Tempesta Cloudy</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen transition-all duration-500 w-full relative overflow-x-hidden ${isDarkActive ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'} font-sans selection:bg-red-100 selection:text-red-900`}>
@@ -1242,18 +1259,33 @@ export default function App() {
                 </div>
 
                 {showFolderInput && (
-                  <div className="p-4 bg-slate-50 border-b border-slate-100">
+                  <div className={`p-4 border-b ${
+                    isDarkActive ? 'bg-slate-900/60 border-white/10 text-white' : 'bg-slate-50 border-slate-100 text-slate-800'
+                  }`}>
                     <form onSubmit={handleFolderCreate} className="flex gap-2">
                        <input 
                         name="folderName"
                         type="text"
                         placeholder="Folder Name"
-                        className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-red-500"
+                        className={`flex-1 px-3 py-1.5 border rounded-lg text-sm outline-none transition-colors duration-150 ${
+                          isDarkActive 
+                            ? 'bg-slate-950 border-white/20 text-white placeholder-white/40 focus:border-red-500' 
+                            : 'bg-white border-slate-200 text-slate-800 placeholder-slate-400 focus:border-red-500'
+                        }`}
                         autoFocus
                         disabled={isCreatingFolder}
                        />
-                       <button type="submit" disabled={isCreatingFolder} className="px-4 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold disabled:opacity-50">Create</button>
-                       <button type="button" disabled={isCreatingFolder} onClick={() => setShowFolderInput(false)} className="px-4 py-1.5 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold disabled:opacity-50">Cancel</button>
+                       <button type="submit" disabled={isCreatingFolder} className="px-4 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold disabled:opacity-50 cursor-pointer">Create</button>
+                       <button 
+                         type="button" 
+                         disabled={isCreatingFolder} 
+                         onClick={() => setShowFolderInput(false)} 
+                         className={`px-4 py-1.5 rounded-lg text-xs font-bold disabled:opacity-50 cursor-pointer ${
+                           isDarkActive ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                         }`}
+                       >
+                         Cancel
+                       </button>
                     </form>
                   </div>
                 )}
