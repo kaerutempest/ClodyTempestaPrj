@@ -24,13 +24,13 @@ async function getGithubReleaseConfig() {
   // Try loading dotenv again just in case
   dotenv.config({ path: path.join(process.cwd(), '.env') });
   const octokit = getOctokit();
-  if (!octokit || !process.env.GITHUB_REPO || !process.env.GITHUB_RELEASE_TAG) {
-      console.log('GitHub config missing:', { cwd: process.cwd(), token: !!process.env.GITHUB_TOKEN, repo: process.env.GITHUB_REPO, tag: process.env.GITHUB_RELEASE_TAG });
+  if (!octokit || !process.env.GITHUB_REPO) {
+      console.log('GitHub config missing:', { cwd: process.cwd(), token: !!process.env.GITHUB_TOKEN, repo: process.env.GITHUB_REPO });
       return null;
   }
   const parts = process.env.GITHUB_REPO.split('/');
   if (parts.length !== 2) return null;
-  return { owner: parts[0], repo: parts[1], tag: process.env.GITHUB_RELEASE_TAG };
+  return { owner: parts[0], repo: parts[1], tag: process.env.GITHUB_RELEASE_TAG || '' };
 }
 
 const getAdminPassword = () => {
@@ -315,58 +315,151 @@ app.post('/api/admin/sync-github', async (req, res) => {
   }
 
   try {
-      const releaseResp = await octokit.rest.repos.getReleaseByTag({ 
-          owner: ghConf.owner, 
-          repo: ghConf.repo, 
-          tag: ghConf.tag 
-      });
+      let releasesList: any[] = [];
       
-      const { name: releaseName, assets } = releaseResp.data;
-
-      // 1. Check if folder already exists in root with this name
-      let folderId = Object.keys(filesMetadata).find(
-          id => filesMetadata[id].type === 'folder' && filesMetadata[id].originalName === (releaseName || ghConf.tag)
-      );
-
-      if (!folderId) {
-          folderId = crypto.randomBytes(8).toString('hex');
-          filesMetadata[folderId] = {
-              id: folderId,
-              originalName: releaseName || ghConf.tag,
-              size: 0,
-              mimeType: 'application/x-directory',
-              uploadDate: Date.now(),
-              type: 'folder',
-              parentId: null
-          };
+      // Try to list all releases to see everything in the repo
+      try {
+          const relListResp = await octokit.rest.repos.listReleases({
+              owner: ghConf.owner,
+              repo: ghConf.repo,
+              per_page: 30
+          });
+          releasesList = relListResp.data;
+      } catch (listErr) {
+          console.warn('Failed listing all releases, falling back to tag-only sync', listErr);
       }
 
-      // 2. Add all assets to this folder
-      let added = 0;
-      for (const asset of assets) {
-          // Check if it already exists to avoid duplicates
-          const exists = Object.values(filesMetadata).find(
-              f => f.parentId === folderId && f.originalName === asset.name
+      // If listReleases was empty or failed, fallback to getReleaseByTag with the configured tag
+      if (releasesList.length === 0 && ghConf.tag) {
+          try {
+              const releaseResp = await octokit.rest.repos.getReleaseByTag({ 
+                  owner: ghConf.owner, 
+                  repo: ghConf.repo, 
+                  tag: ghConf.tag 
+              });
+              releasesList = [releaseResp.data];
+          } catch (tagErr) {
+              console.error('Failed to get release by tag during fallback', tagErr);
+          }
+      }
+
+      if (releasesList.length === 0) {
+          return res.status(404).json({ error: 'No releases found on GitHub repository.' });
+      }
+
+      let totalAdded = 0;
+      let totalUpdated = 0;
+      let totalDeleted = 0;
+      const syncedFolderIds: string[] = [];
+
+      for (const release of releasesList) {
+          const { name: releaseName, tag_name: tag_name, assets } = release;
+          const displayFolderName = releaseName || tag_name;
+
+          // Find or create the directory folder for this release
+          let folderId = Object.keys(filesMetadata).find(
+              id => filesMetadata[id].type === 'folder' && 
+                    (filesMetadata[id].originalName === displayFolderName || filesMetadata[id].originalName === tag_name)
           );
-          if (!exists) {
-              const fileId = crypto.randomBytes(8).toString('hex');
-              filesMetadata[fileId] = {
-                  id: fileId,
-                  originalName: asset.name,
-                  size: asset.size,
-                  mimeType: asset.content_type,
+
+          if (!folderId) {
+              folderId = crypto.randomBytes(8).toString('hex');
+              filesMetadata[folderId] = {
+                  id: folderId,
+                  originalName: displayFolderName,
+                  size: 0,
+                  mimeType: 'application/x-directory',
                   uploadDate: Date.now(),
-                  type: 'file',
-                  parentId: folderId,
-                  githubAssetId: asset.id,
-                  githubDownloadUrl: asset.browser_download_url
+                  type: 'folder',
+                  parentId: null
               };
-              added++;
+          } else {
+              // Ensure name is up to date
+              filesMetadata[folderId].originalName = displayFolderName;
+          }
+          
+          if (!syncedFolderIds.includes(folderId)) {
+              syncedFolderIds.push(folderId);
+          }
+
+          // Gather existing files in this folder that are associated with github
+          const existingGitFiles = Object.values(filesMetadata).filter(
+              f => f.parentId === folderId && f.type === 'file' && f.githubAssetId !== undefined
+          );
+
+          // Track asset IDs available in the current release
+          const currentAssetIds = new Set(assets.map((a: any) => a.id));
+
+          // 1. Delete metadata files that are no longer present in the GitHub release
+          for (const gitFile of existingGitFiles) {
+              if (gitFile.githubAssetId && !currentAssetIds.has(gitFile.githubAssetId)) {
+                  delete filesMetadata[gitFile.id];
+                  totalDeleted++;
+              }
+          }
+
+          // 2. Add or update assets from this release
+          for (const asset of assets) {
+              const matchedFile = Object.values(filesMetadata).find(
+                  f => f.parentId === folderId && (f.githubAssetId === asset.id || f.originalName === asset.name)
+              );
+
+              if (!matchedFile) {
+                  const fileId = crypto.randomBytes(8).toString('hex');
+                  filesMetadata[fileId] = {
+                      id: fileId,
+                      originalName: asset.name,
+                      size: asset.size,
+                      mimeType: asset.content_type,
+                      uploadDate: Date.now(),
+                      type: 'file',
+                      parentId: folderId,
+                      githubAssetId: asset.id,
+                      githubDownloadUrl: asset.browser_download_url
+                  };
+                  totalAdded++;
+              } else {
+                  // Update file metadata if anything changed
+                  let updated = false;
+                  if (matchedFile.githubAssetId !== asset.id) {
+                      matchedFile.githubAssetId = asset.id;
+                      updated = true;
+                  }
+                  if (matchedFile.size !== asset.size) {
+                      matchedFile.size = asset.size;
+                      updated = true;
+                  }
+                  if (matchedFile.githubDownloadUrl !== asset.browser_download_url) {
+                      matchedFile.githubDownloadUrl = asset.browser_download_url;
+                      updated = true;
+                  }
+                  if (matchedFile.originalName !== asset.name) {
+                      matchedFile.originalName = asset.name;
+                      updated = true;
+                  }
+                  if (updated) {
+                      totalUpdated++;
+                  }
+              }
           }
       }
 
       saveMetadata();
-      res.json({ success: true, folderId, added, message: `Synced ${added} new files from GitHub Release.` });
+      
+      let msg = `Synced releases successfully.`;
+      if (totalAdded > 0 || totalUpdated > 0 || totalDeleted > 0) {
+          msg = `Synced successfully: Added ${totalAdded}, Updated ${totalUpdated}, Deleted ${totalDeleted} files across ${releasesList.length} releases/folders.`;
+      } else {
+          msg = `Re-synchronized. All ${releasesList.length} releases are already fully up to date!`;
+      }
+      
+      res.json({ 
+          success: true, 
+          added: totalAdded, 
+          updated: totalUpdated, 
+          deleted: totalDeleted, 
+          message: msg 
+      });
   } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Failed to sync from GitHub' });
