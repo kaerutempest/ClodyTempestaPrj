@@ -92,6 +92,7 @@ export default function App() {
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [activeItemMenu, setActiveItemMenu] = useState<string | null>(null);
+  const navigationCountRef = useRef(0);
 
   const lowSpecMode = false;
 
@@ -183,9 +184,33 @@ export default function App() {
       verifyAdmin(adminPassword);
     }
     
-    // Check for direct download link
-    const handleUrl = () => {
+    // Check for direct download link and folder routing on popstate
+    const handleUrl = async () => {
       const path = window.location.pathname;
+      const params = new URLSearchParams(window.location.search);
+      const urlFolderId = params.get('folderId');
+
+      if (urlFolderId) {
+        try {
+          const res = await fetch(`/api/folder-path/${urlFolderId}`);
+          if (res.ok) {
+            const pathList = await res.json();
+            setFolderStack(pathList);
+            setCurrentFolderId(urlFolderId);
+          } else {
+            setFolderStack([]);
+            setCurrentFolderId(null);
+          }
+        } catch (e) {
+          console.error('Failed to sync folder path from URL params', e);
+          setFolderStack([]);
+          setCurrentFolderId(null);
+        }
+      } else {
+        setFolderStack([]);
+        setCurrentFolderId(null);
+      }
+
       if (path.startsWith('/d/')) {
         const fileId = path.split('/d/')[1];
         fetchFile(fileId);
@@ -348,14 +373,23 @@ export default function App() {
   const enterFolder = (folder: FileMetadata) => {
     setFolderStack([...folderStack, folder]);
     setCurrentFolderId(folder.id);
+    window.history.pushState({ folderId: folder.id }, '', `?folderId=${folder.id}`);
+    navigationCountRef.current++;
   };
 
   const goBack = () => {
-    const newStack = [...folderStack];
-    newStack.pop();
-    const parent = newStack[newStack.length - 1];
-    setFolderStack(newStack);
-    setCurrentFolderId(parent ? parent.id : null);
+    if (navigationCountRef.current > 0) {
+      window.history.back();
+      navigationCountRef.current--;
+    } else {
+      const newStack = [...folderStack];
+      newStack.pop();
+      const parent = newStack[newStack.length - 1];
+      const parentId = parent ? parent.id : null;
+      setFolderStack(newStack);
+      setCurrentFolderId(parentId);
+      window.history.pushState({ folderId: parentId }, '', parentId ? `?folderId=${parentId}` : '/');
+    }
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -661,6 +695,7 @@ export default function App() {
     setCurrentFolderId(null);
     setFolderStack([]);
     window.history.pushState({}, '', '/');
+    navigationCountRef.current++;
     fetchFiles(null);
   };
 
@@ -1150,6 +1185,8 @@ export default function App() {
                           const newStack = folderStack.slice(0, i + 1);
                           setFolderStack(newStack);
                           setCurrentFolderId(folder.id);
+                          window.history.pushState({ folderId: folder.id }, '', `?folderId=${folder.id}`);
+                          navigationCountRef.current++;
                         }}
                       >
                         {folder.originalName}

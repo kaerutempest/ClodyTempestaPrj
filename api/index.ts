@@ -86,6 +86,61 @@ const saveSettings = () => {
   fs.renameSync(tmpPath, settingsFilePath);
 };
 
+const ensurePrepopulatedKaeblox = () => {
+  const KAEBLOX_FOLDER_ID = 'c51a3e51f82873d1';
+  
+  // 1. Ensure Kaeblox folder exists
+  if (!filesMetadata[KAEBLOX_FOLDER_ID]) {
+    filesMetadata[KAEBLOX_FOLDER_ID] = {
+      id: KAEBLOX_FOLDER_ID,
+      originalName: 'Kaeblox (Android 11-15+)',
+      size: 0,
+      mimeType: 'application/x-directory',
+      uploadDate: 1779110521922,
+      type: 'folder',
+      parentId: null,
+      githubReleaseTag: 'Kaeblox(ForA12+)'
+    };
+  } else {
+    // If folder exists, make sure name and release tag are correct
+    filesMetadata[KAEBLOX_FOLDER_ID].originalName = 'Kaeblox (Android 11-15+)';
+    filesMetadata[KAEBLOX_FOLDER_ID].githubReleaseTag = 'Kaeblox(ForA12+)';
+  }
+
+  // 2. Ensure the 6 APKs exist inside the Kaeblox folder of this release
+  const apks = [
+    { name: 'Kaeblox_1.apk', id: '333bf9a79acaabd8', assetId: 435295213 },
+    { name: 'Kaeblox_2.apk', id: '265bd61f51043795', assetId: 435295625 },
+    { name: 'Kaeblox_3.apk', id: '7a5a47fddaec128e', assetId: 435295998 },
+    { name: 'Kaeblox_4.apk', id: '8e59efeb2570fe2d', assetId: 435296384 },
+    { name: 'Kaeblox_5.apk', id: 'afe8800e2d890f8b', assetId: 435296661 },
+    { name: 'Kaeblox_6.apk', id: '0d69c32ef99e9916', assetId: 435296935 }
+  ];
+
+  apks.forEach((apk, index) => {
+    if (!filesMetadata[apk.id]) {
+      filesMetadata[apk.id] = {
+        id: apk.id,
+        originalName: apk.name,
+        size: 95131813,
+        mimeType: 'application/vnd.android.package-archive',
+        uploadDate: 1779110521923 + index,
+        type: 'file',
+        parentId: KAEBLOX_FOLDER_ID,
+        githubAssetId: apk.assetId,
+        githubDownloadUrl: `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaeblox%28ForA12%2B%29/${apk.name}`
+      };
+    } else {
+      // Ensure the download urls, parentId, and naming are completely aligned
+      filesMetadata[apk.id].originalName = apk.name;
+      filesMetadata[apk.id].parentId = KAEBLOX_FOLDER_ID;
+      filesMetadata[apk.id].githubDownloadUrl = `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaeblox%28ForA12%2B%29/${apk.name}`;
+    }
+  });
+
+  saveMetadata();
+};
+
 const loadData = () => {
   if (fs.existsSync(metadataFilePath)) {
     try {
@@ -123,9 +178,14 @@ const loadData = () => {
           }
         }
       });
-      saveMetadata();
-    } catch (e) { filesMetadata = {}; }
+    } catch (e) {
+      filesMetadata = {};
+    }
   }
+
+  // Ensure Kaeblox folder & files are pre-populated so they are NEVER missing or empty
+  ensurePrepopulatedKaeblox();
+
   if (fs.existsSync(settingsFilePath)) {
     try {
       settings = JSON.parse(fs.readFileSync(settingsFilePath, 'utf-8'));
@@ -625,6 +685,21 @@ app.get('/api/file/:id', (req, res) => {
   const metadata = filesMetadata[req.params.id];
   if (!metadata) return res.status(404).json({ error: 'Not found' });
   res.json(metadata);
+});
+
+app.get('/api/folder-path/:id', (req, res) => {
+  const list: any[] = [];
+  let currentId: string | null = req.params.id;
+  const visited = new Set<string>();
+  
+  while (currentId && !visited.has(currentId)) {
+    visited.add(currentId);
+    const folder = filesMetadata[currentId];
+    if (!folder) break;
+    list.unshift(folder);
+    currentId = folder.parentId;
+  }
+  res.json(list);
 });
 
 app.get('/download/:id', (req, res) => {
