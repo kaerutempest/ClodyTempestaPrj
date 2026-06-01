@@ -42,6 +42,7 @@ interface FileMetadata {
   uploadDate: number;
   type: 'file' | 'folder';
   parentId: string | null;
+  githubReleaseTag?: string;
 }
 
 export default function App() {

@@ -12,20 +12,19 @@ dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 const MyOctokit = Octokit.plugin(restEndpointMethods, paginateRest);
 
-let octokitInstance: InstanceType<typeof MyOctokit> | null = null;
 function getOctokit() {
-  if (!octokitInstance && process.env.GITHUB_TOKEN) {
-    octokitInstance = new MyOctokit({ auth: process.env.GITHUB_TOKEN });
+  dotenv.config({ path: path.join(process.cwd(), '.env') });
+  if (!process.env.GITHUB_TOKEN) {
+    return null;
   }
-  return octokitInstance;
+  return new MyOctokit({ auth: process.env.GITHUB_TOKEN });
 }
 
 async function getGithubReleaseConfig() {
-  // Try loading dotenv again just in case
   dotenv.config({ path: path.join(process.cwd(), '.env') });
   const octokit = getOctokit();
   if (!octokit || !process.env.GITHUB_REPO) {
-      console.log('GitHub config missing:', { cwd: process.cwd(), token: !!process.env.GITHUB_TOKEN, repo: process.env.GITHUB_REPO });
+      console.log('GitHub config missing status:', { cwd: process.cwd(), hasToken: !!process.env.GITHUB_TOKEN, repo: process.env.GITHUB_REPO });
       return null;
   }
   const parts = process.env.GITHUB_REPO.split('/');
@@ -71,6 +70,7 @@ interface FileMetadata {
   githubAssetId?: number;
   githubDownloadUrl?: string;
   order?: number;
+  githubReleaseTag?: string;
 }
 
 let filesMetadata: Record<string, FileMetadata> = {};
@@ -85,6 +85,27 @@ const loadData = () => {
         if (data[id].parentId === undefined) data[id].parentId = null;
       });
       filesMetadata = data;
+
+      // Auto-migrate & backfill githubReleaseTag for existing folders
+      Object.keys(filesMetadata).forEach(id => {
+        const folder = filesMetadata[id];
+        if (folder.type === 'folder' && !folder.githubReleaseTag) {
+          // Find any child file with a githubDownloadUrl to extract the tag name
+          const gitChild = Object.values(filesMetadata).find(
+            f => f.parentId === id && f.githubDownloadUrl
+          );
+          if (gitChild && gitChild.githubDownloadUrl) {
+            const match = gitChild.githubDownloadUrl.match(/\/releases\/download\/([^/]+)\//);
+            if (match && match[1]) {
+              folder.githubReleaseTag = decodeURIComponent(match[1]);
+              console.log(`Backfilled githubReleaseTag for folder "${folder.originalName}" with tag "${folder.githubReleaseTag}"`);
+            }
+          } else if (folder.originalName.toLowerCase().includes('kaeblox')) {
+            folder.githubReleaseTag = 'Kaeblox(ForA12+)';
+            console.log(`Fallback backfilled githubReleaseTag for Kaeblox folder "${folder.originalName}"`);
+          }
+        }
+      });
     } catch (e) { filesMetadata = {}; }
   }
   if (fs.existsSync(settingsFilePath)) {
@@ -359,7 +380,9 @@ app.post('/api/admin/sync-github', async (req, res) => {
           // Find or create the directory folder for this release
           let folderId = Object.keys(filesMetadata).find(
               id => filesMetadata[id].type === 'folder' && 
-                    (filesMetadata[id].originalName === displayFolderName || filesMetadata[id].originalName === tag_name)
+                    (filesMetadata[id].githubReleaseTag === tag_name ||
+                     filesMetadata[id].originalName === displayFolderName || 
+                     filesMetadata[id].originalName === tag_name)
           );
 
           if (!folderId) {
@@ -371,34 +394,24 @@ app.post('/api/admin/sync-github', async (req, res) => {
                   mimeType: 'application/x-directory',
                   uploadDate: Date.now(),
                   type: 'folder',
-                  parentId: null
+                  parentId: null,
+                  githubReleaseTag: tag_name
               };
           } else {
-              // Ensure name is up to date
-              filesMetadata[folderId].originalName = displayFolderName;
+              // Ensure name is preserved if renamed by user, but link the tag permanently
+              if (!filesMetadata[folderId].githubReleaseTag) {
+                  filesMetadata[folderId].githubReleaseTag = tag_name;
+              }
           }
           
           if (!syncedFolderIds.includes(folderId)) {
               syncedFolderIds.push(folderId);
           }
 
-          // Gather existing files in this folder that are associated with github
-          const existingGitFiles = Object.values(filesMetadata).filter(
-              f => f.parentId === folderId && f.type === 'file' && f.githubAssetId !== undefined
-          );
+          // NO AUTOMATIC DELETION during sync to satisfy user intent:
+          // "Permanen kan jngan ilang ampe (admin/gua apus manual)"
 
-          // Track asset IDs available in the current release
-          const currentAssetIds = new Set(assets.map((a: any) => a.id));
-
-          // 1. Delete metadata files that are no longer present in the GitHub release
-          for (const gitFile of existingGitFiles) {
-              if (gitFile.githubAssetId && !currentAssetIds.has(gitFile.githubAssetId)) {
-                  delete filesMetadata[gitFile.id];
-                  totalDeleted++;
-              }
-          }
-
-          // 2. Add or update assets from this release
+          // Add or update assets from this release
           for (const asset of assets) {
               const matchedFile = Object.values(filesMetadata).find(
                   f => f.parentId === folderId && (f.githubAssetId === asset.id || f.originalName === asset.name)
