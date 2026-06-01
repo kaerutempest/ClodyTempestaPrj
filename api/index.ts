@@ -109,12 +109,12 @@ const ensurePrepopulatedKaeblox = () => {
 
   // 2. Ensure the 6 APKs exist inside the Kaeblox folder of this release
   const apks = [
-    { name: 'Kaeblox_1.apk', id: '333bf9a79acaabd8', assetId: 435295213 },
-    { name: 'Kaeblox_2.apk', id: '265bd61f51043795', assetId: 435295625 },
-    { name: 'Kaeblox_3.apk', id: '7a5a47fddaec128e', assetId: 435295998 },
-    { name: 'Kaeblox_4.apk', id: '8e59efeb2570fe2d', assetId: 435296384 },
-    { name: 'Kaeblox_5.apk', id: 'afe8800e2d890f8b', assetId: 435296661 },
-    { name: 'Kaeblox_6.apk', id: '0d69c32ef99e9916', assetId: 435296935 }
+    { name: 'Kaeblox_1.apk', id: '333bf9a79acaabd8', assetId: 435295213, order: 1 },
+    { name: 'Kaeblox_2.apk', id: '265bd61f51043795', assetId: 435295625, order: 2 },
+    { name: 'Kaeblox_3.apk', id: '7a5a47fddaec128e', assetId: 435295998, order: 3 },
+    { name: 'Kaeblox_4.apk', id: '8e59efeb2570fe2d', assetId: 435296384, order: 4 },
+    { name: 'Kaeblox_5.apk', id: 'afe8800e2d890f8b', assetId: 435296661, order: 5 },
+    { name: 'Kaeblox_6.apk', id: '0d69c32ef99e9916', assetId: 435296935, order: 6 }
   ];
 
   apks.forEach((apk, index) => {
@@ -128,13 +128,15 @@ const ensurePrepopulatedKaeblox = () => {
         type: 'file',
         parentId: KAEBLOX_FOLDER_ID,
         githubAssetId: apk.assetId,
-        githubDownloadUrl: `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaeblox%28ForA12%2B%29/${apk.name}`
+        githubDownloadUrl: `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaeblox%28ForA12%2B%29/${apk.name}`,
+        order: apk.order
       };
     } else {
       // Ensure the download urls, parentId, and naming are completely aligned
       filesMetadata[apk.id].originalName = apk.name;
       filesMetadata[apk.id].parentId = KAEBLOX_FOLDER_ID;
       filesMetadata[apk.id].githubDownloadUrl = `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaeblox%28ForA12%2B%29/${apk.name}`;
+      filesMetadata[apk.id].order = apk.order;
     }
   });
 
@@ -676,6 +678,14 @@ app.get('/api/files', async (req, res) => {
       if (b.order !== undefined) return 1;
       if (a.type === 'folder' && b.type !== 'folder') return -1;
       if (a.type !== 'folder' && b.type === 'folder') return 1;
+
+      // Secondary sorting: If names contain 'kaeblox', sort alphabetically ascending (1 to 6)
+      const aName = a.originalName.toLowerCase();
+      const bName = b.originalName.toLowerCase();
+      if (aName.includes('kaeblox') && bName.includes('kaeblox')) {
+        return a.originalName.localeCompare(b.originalName, undefined, { numeric: true, sensitivity: 'base' });
+      }
+
       return b.uploadDate - a.uploadDate;
     });
   res.json(list);
