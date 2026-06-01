@@ -14,22 +14,21 @@ const MyOctokit = Octokit.plugin(restEndpointMethods, paginateRest);
 
 function getOctokit() {
   dotenv.config({ path: path.join(process.cwd(), '.env') });
-  if (!process.env.GITHUB_TOKEN) {
-    return null;
+  if (process.env.GITHUB_TOKEN) {
+    return new MyOctokit({ auth: process.env.GITHUB_TOKEN });
   }
-  return new MyOctokit({ auth: process.env.GITHUB_TOKEN });
+  // Public repo fallback (no token needed for read-only access)
+  return new MyOctokit();
 }
 
 async function getGithubReleaseConfig() {
   dotenv.config({ path: path.join(process.cwd(), '.env') });
   const octokit = getOctokit();
-  if (!octokit || !process.env.GITHUB_REPO) {
-      console.log('GitHub config missing status:', { cwd: process.cwd(), hasToken: !!process.env.GITHUB_TOKEN, repo: process.env.GITHUB_REPO });
-      return null;
-  }
-  const parts = process.env.GITHUB_REPO.split('/');
+  if (!octokit) return null;
+  const repoStr = process.env.GITHUB_REPO || 'kaerutempest/ClodyStorage';
+  const parts = repoStr.split('/');
   if (parts.length !== 2) return null;
-  return { owner: parts[0], repo: parts[1], tag: process.env.GITHUB_RELEASE_TAG || '' };
+  return { owner: parts[0], repo: parts[1], tag: process.env.GITHUB_RELEASE_TAG || 'Kaeblox(ForA12+)' };
 }
 
 const getAdminPassword = () => {
@@ -76,6 +75,17 @@ interface FileMetadata {
 let filesMetadata: Record<string, FileMetadata> = {};
 let settings: { backgroundImage: string; maintenanceMode?: boolean; backgroundLocked?: boolean } = { backgroundImage: '' };
 
+const saveMetadata = () => {
+  const tmpPath = metadataFilePath + '.tmp';
+  fs.writeFileSync(tmpPath, JSON.stringify(filesMetadata));
+  fs.renameSync(tmpPath, metadataFilePath);
+};
+const saveSettings = () => {
+  const tmpPath = settingsFilePath + '.tmp';
+  fs.writeFileSync(tmpPath, JSON.stringify(settings));
+  fs.renameSync(tmpPath, settingsFilePath);
+};
+
 const loadData = () => {
   if (fs.existsSync(metadataFilePath)) {
     try {
@@ -89,23 +99,31 @@ const loadData = () => {
       // Auto-migrate & backfill githubReleaseTag for existing folders
       Object.keys(filesMetadata).forEach(id => {
         const folder = filesMetadata[id];
-        if (folder.type === 'folder' && !folder.githubReleaseTag) {
-          // Find any child file with a githubDownloadUrl to extract the tag name
-          const gitChild = Object.values(filesMetadata).find(
-            f => f.parentId === id && f.githubDownloadUrl
-          );
-          if (gitChild && gitChild.githubDownloadUrl) {
-            const match = gitChild.githubDownloadUrl.match(/\/releases\/download\/([^/]+)\//);
-            if (match && match[1]) {
-              folder.githubReleaseTag = decodeURIComponent(match[1]);
-              console.log(`Backfilled githubReleaseTag for folder "${folder.originalName}" with tag "${folder.githubReleaseTag}"`);
+        if (folder.type === 'folder') {
+          if (!folder.githubReleaseTag) {
+            // Find any child file with a githubDownloadUrl to extract the tag name
+            const gitChild = Object.values(filesMetadata).find(
+              f => f.parentId === id && f.githubDownloadUrl
+            );
+            if (gitChild && gitChild.githubDownloadUrl) {
+              const match = gitChild.githubDownloadUrl.match(/\/releases\/download\/([^/]+)\//);
+              if (match && match[1]) {
+                folder.githubReleaseTag = decodeURIComponent(match[1]);
+                console.log(`Backfilled githubReleaseTag for folder "${folder.originalName}" with tag "${folder.githubReleaseTag}"`);
+              }
+            } else if (folder.originalName.toLowerCase().includes('kaeblox')) {
+              folder.githubReleaseTag = 'Kaeblox(ForA12+)';
+              console.log(`Fallback backfilled githubReleaseTag for Kaeblox folder "${folder.originalName}"`);
             }
-          } else if (folder.originalName.toLowerCase().includes('kaeblox')) {
-            folder.githubReleaseTag = 'Kaeblox(ForA12+)';
-            console.log(`Fallback backfilled githubReleaseTag for Kaeblox folder "${folder.originalName}"`);
+          }
+
+          // Force rename Kaeblox version variations to 'Kaeblox (Android 11-15+)' as requested by user
+          if (folder.githubReleaseTag === 'Kaeblox(ForA12+)' || folder.originalName === 'Kaeblox 2.720.716' || folder.originalName === 'Kaeblox') {
+            folder.originalName = 'Kaeblox (Android 11-15+)';
           }
         }
       });
+      saveMetadata();
     } catch (e) { filesMetadata = {}; }
   }
   if (fs.existsSync(settingsFilePath)) {
@@ -116,17 +134,6 @@ const loadData = () => {
 };
 
 loadData();
-
-const saveMetadata = () => {
-  const tmpPath = metadataFilePath + '.tmp';
-  fs.writeFileSync(tmpPath, JSON.stringify(filesMetadata));
-  fs.renameSync(tmpPath, metadataFilePath);
-};
-const saveSettings = () => {
-  const tmpPath = settingsFilePath + '.tmp';
-  fs.writeFileSync(tmpPath, JSON.stringify(settings));
-  fs.renameSync(tmpPath, settingsFilePath);
-};
 
 // Multer config
 const storage = multer.diskStorage({
@@ -326,153 +333,167 @@ app.post('/api/upload', (req, res, next) => {
   });
 });
 
-app.post('/api/admin/sync-github', async (req, res) => {
-  if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
-  
+let lastAutoSyncTime = 0;
+const AUTO_SYNC_COOLDOWN = 10 * 60 * 1000; // 10 minutes cache/cooldown for public requests
+
+async function autoSyncGithub(force = false) {
+  const now = Date.now();
+  if (!force && (now - lastAutoSyncTime < AUTO_SYNC_COOLDOWN)) {
+    console.log('AutoSync: within cooldown, skipping auto-sync.');
+    return { success: true, message: 'Already synced recently' };
+  }
+  lastAutoSyncTime = now;
+
+  console.log(`Running GitHub Sync... (force=${force})`);
   const ghConf = await getGithubReleaseConfig();
   const octokit = getOctokit();
   if (!ghConf || !octokit) {
-      return res.status(400).json({ error: 'GitHub is not configured in .env' });
+    console.log('GitHub config is not full/missing template fallback');
+    return { error: 'GitHub config missing' };
   }
 
+  let releasesList: any[] = [];
   try {
-      let releasesList: any[] = [];
-      
-      // Try to list all releases to see everything in the repo
+      const relListResp = await octokit.rest.repos.listReleases({
+          owner: ghConf.owner,
+          repo: ghConf.repo,
+          per_page: 30
+      });
+      releasesList = relListResp.data;
+  } catch (listErr) {
+      console.warn('AutoSync: listing all releases failed, trying tag backup', listErr);
+  }
+
+  if (releasesList.length === 0 && ghConf.tag) {
       try {
-          const relListResp = await octokit.rest.repos.listReleases({
-              owner: ghConf.owner,
-              repo: ghConf.repo,
-              per_page: 30
+          const releaseResp = await octokit.rest.repos.getReleaseByTag({ 
+              owner: ghConf.owner, 
+              repo: ghConf.repo, 
+              tag: ghConf.tag 
           });
-          releasesList = relListResp.data;
-      } catch (listErr) {
-          console.warn('Failed listing all releases, falling back to tag-only sync', listErr);
+          releasesList = [releaseResp.data];
+      } catch (tagErr) {
+          console.error('AutoSync: tag fallback failed', tagErr);
+      }
+  }
+
+  if (releasesList.length === 0) {
+      return { error: 'No releases found on GitHub' };
+  }
+
+  let totalAdded = 0;
+  let totalUpdated = 0;
+  const syncedFolderIds: string[] = [];
+
+  for (const release of releasesList) {
+      const { name: releaseName, tag_name: tag_name, assets } = release;
+      let displayFolderName = releaseName || tag_name;
+
+      // Force format folder name for Kaeblox as demanded by user to prevent "empty folders"
+      if (tag_name === 'Kaeblox(ForA12+)' || displayFolderName === 'Kaeblox') {
+          displayFolderName = 'Kaeblox (Android 11-15+)';
       }
 
-      // If listReleases was empty or failed, fallback to getReleaseByTag with the configured tag
-      if (releasesList.length === 0 && ghConf.tag) {
-          try {
-              const releaseResp = await octokit.rest.repos.getReleaseByTag({ 
-                  owner: ghConf.owner, 
-                  repo: ghConf.repo, 
-                  tag: ghConf.tag 
-              });
-              releasesList = [releaseResp.data];
-          } catch (tagErr) {
-              console.error('Failed to get release by tag during fallback', tagErr);
+      // Find or create the directory folder for this release
+      let folderId = Object.keys(filesMetadata).find(
+          id => filesMetadata[id].type === 'folder' && 
+                (filesMetadata[id].githubReleaseTag === tag_name ||
+                 filesMetadata[id].originalName === displayFolderName || 
+                 filesMetadata[id].originalName === tag_name ||
+                 filesMetadata[id].originalName === 'Kaeblox 2.720.716')
+      );
+
+      if (!folderId) {
+          folderId = crypto.randomBytes(8).toString('hex');
+          filesMetadata[folderId] = {
+              id: folderId,
+              originalName: displayFolderName,
+              size: 0,
+              mimeType: 'application/x-directory',
+              uploadDate: Date.now(),
+              type: 'folder',
+              parentId: null,
+              githubReleaseTag: tag_name
+          };
+      } else {
+          // Keep name up to date but preserve rename if done via admin manual
+          if (tag_name === 'Kaeblox(ForA12+)' || displayFolderName === 'Kaeblox (Android 11-15+)') {
+              filesMetadata[folderId].originalName = displayFolderName;
+          }
+          if (!filesMetadata[folderId].githubReleaseTag) {
+              filesMetadata[folderId].githubReleaseTag = tag_name;
           }
       }
-
-      if (releasesList.length === 0) {
-          return res.status(404).json({ error: 'No releases found on GitHub repository.' });
+      
+      if (!syncedFolderIds.includes(folderId)) {
+          syncedFolderIds.push(folderId);
       }
 
-      let totalAdded = 0;
-      let totalUpdated = 0;
-      let totalDeleted = 0;
-      const syncedFolderIds: string[] = [];
-
-      for (const release of releasesList) {
-          const { name: releaseName, tag_name: tag_name, assets } = release;
-          const displayFolderName = releaseName || tag_name;
-
-          // Find or create the directory folder for this release
-          let folderId = Object.keys(filesMetadata).find(
-              id => filesMetadata[id].type === 'folder' && 
-                    (filesMetadata[id].githubReleaseTag === tag_name ||
-                     filesMetadata[id].originalName === displayFolderName || 
-                     filesMetadata[id].originalName === tag_name)
+      // Sync and backfill all file assets inside the release folder
+      for (const asset of assets) {
+          const matchedFile = Object.values(filesMetadata).find(
+              f => f.parentId === folderId && (f.githubAssetId === asset.id || f.originalName === asset.name)
           );
 
-          if (!folderId) {
-              folderId = crypto.randomBytes(8).toString('hex');
-              filesMetadata[folderId] = {
-                  id: folderId,
-                  originalName: displayFolderName,
-                  size: 0,
-                  mimeType: 'application/x-directory',
+          if (!matchedFile) {
+              const fileId = crypto.randomBytes(8).toString('hex');
+              filesMetadata[fileId] = {
+                  id: fileId,
+                  originalName: asset.name,
+                  size: asset.size,
+                  mimeType: asset.content_type || 'application/vnd.android.package-archive',
                   uploadDate: Date.now(),
-                  type: 'folder',
-                  parentId: null,
-                  githubReleaseTag: tag_name
+                  type: 'file',
+                  parentId: folderId,
+                  githubAssetId: asset.id,
+                  githubDownloadUrl: asset.browser_download_url
               };
+              totalAdded++;
           } else {
-              // Ensure name is preserved if renamed by user, but link the tag permanently
-              if (!filesMetadata[folderId].githubReleaseTag) {
-                  filesMetadata[folderId].githubReleaseTag = tag_name;
+              let updated = false;
+              if (matchedFile.githubAssetId !== asset.id) {
+                  matchedFile.githubAssetId = asset.id;
+                  updated = true;
               }
-          }
-          
-          if (!syncedFolderIds.includes(folderId)) {
-              syncedFolderIds.push(folderId);
-          }
-
-          // NO AUTOMATIC DELETION during sync to satisfy user intent:
-          // "Permanen kan jngan ilang ampe (admin/gua apus manual)"
-
-          // Add or update assets from this release
-          for (const asset of assets) {
-              const matchedFile = Object.values(filesMetadata).find(
-                  f => f.parentId === folderId && (f.githubAssetId === asset.id || f.originalName === asset.name)
-              );
-
-              if (!matchedFile) {
-                  const fileId = crypto.randomBytes(8).toString('hex');
-                  filesMetadata[fileId] = {
-                      id: fileId,
-                      originalName: asset.name,
-                      size: asset.size,
-                      mimeType: asset.content_type,
-                      uploadDate: Date.now(),
-                      type: 'file',
-                      parentId: folderId,
-                      githubAssetId: asset.id,
-                      githubDownloadUrl: asset.browser_download_url
-                  };
-                  totalAdded++;
-              } else {
-                  // Update file metadata if anything changed
-                  let updated = false;
-                  if (matchedFile.githubAssetId !== asset.id) {
-                      matchedFile.githubAssetId = asset.id;
-                      updated = true;
-                  }
-                  if (matchedFile.size !== asset.size) {
-                      matchedFile.size = asset.size;
-                      updated = true;
-                  }
-                  if (matchedFile.githubDownloadUrl !== asset.browser_download_url) {
-                      matchedFile.githubDownloadUrl = asset.browser_download_url;
-                      updated = true;
-                  }
-                  if (matchedFile.originalName !== asset.name) {
-                      matchedFile.originalName = asset.name;
-                      updated = true;
-                  }
-                  if (updated) {
-                      totalUpdated++;
-                  }
+              if (matchedFile.size !== asset.size) {
+                  matchedFile.size = asset.size;
+                  updated = true;
+              }
+              if (matchedFile.githubDownloadUrl !== asset.browser_download_url) {
+                  matchedFile.githubDownloadUrl = asset.browser_download_url;
+                  updated = true;
+              }
+              if (matchedFile.originalName !== asset.name) {
+                  matchedFile.originalName = asset.name;
+                  updated = true;
+              }
+              if (updated) {
+                  totalUpdated++;
               }
           }
       }
+  }
 
-      saveMetadata();
-      
-      let msg = `Synced releases successfully.`;
-      if (totalAdded > 0 || totalUpdated > 0 || totalDeleted > 0) {
-          msg = `Synced successfully: Added ${totalAdded}, Updated ${totalUpdated}, Deleted ${totalDeleted} files across ${releasesList.length} releases/folders.`;
-      } else {
-          msg = `Re-synchronized. All ${releasesList.length} releases are already fully up to date!`;
+  saveMetadata();
+
+  let msg = `Synced releases successfully.`;
+  if (totalAdded > 0 || totalUpdated > 0) {
+      msg = `Synced successfully: Added ${totalAdded}, Updated ${totalUpdated} files across ${releasesList.length} releases/folders.`;
+  } else {
+      msg = `Re-synchronized. All ${releasesList.length} releases are already fully up to date!`;
+  }
+
+  return { success: true, added: totalAdded, updated: totalUpdated, message: msg, releasesCount: releasesList.length };
+}
+
+app.post('/api/admin/sync-github', async (req, res) => {
+  if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+      const result = await autoSyncGithub(true);
+      if (result.error) {
+          return res.status(400).json({ error: result.error });
       }
-      
-      res.json({ 
-          success: true, 
-          added: totalAdded, 
-          updated: totalUpdated, 
-          deleted: totalDeleted, 
-          message: msg 
-      });
+      res.json(result);
   } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Failed to sync from GitHub' });
@@ -572,10 +593,21 @@ app.post('/api/reorder', (req, res) => {
   res.json({ success: true });
 });
 
-app.get('/api/files', (req, res) => {
+app.get('/api/files', async (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   const { parentId } = req.query;
   const pid = parentId === 'null' || !parentId ? null : parentId as string;
+
+  // Run silent auto-sync from GitHub if listing root directory or if empty.
+  // This ensures the custom folders and APK files are never empty even after container restart/spin-down.
+  if (pid === null || Object.keys(filesMetadata).length <= 1) {
+    try {
+      await autoSyncGithub(false);
+    } catch (autoErr) {
+      console.error('Failed processing background autoSync:', autoErr);
+    }
+  }
+
   const list = Object.values(filesMetadata)
     .filter(f => f.parentId === pid)
     .sort((a, b) => {
