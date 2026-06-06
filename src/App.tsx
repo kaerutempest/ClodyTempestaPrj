@@ -28,6 +28,7 @@ import {
   Settings,
   ArrowUp,
   ArrowDown,
+  ArrowLeft,
   Github,
   Moon,
   Sun
@@ -1197,20 +1198,6 @@ export default function App() {
 
                 {/* Right side: Button Controls */}
                 <div className={`flex items-center gap-1.5 shrink-0 pl-2 border-l ${isDarkActive ? 'border-white/10' : 'border-slate-100'}`}>
-                  {folderStack.length > 0 && (
-                    <motion.button 
-                      {...hoverTapProps(1.05, 0.95)}
-                      onClick={goBack}
-                      className={`p-2 rounded-xl transition-colors duration-150 flex items-center justify-center cursor-pointer ${
-                        isDarkActive 
-                          ? 'text-white/80 hover:text-white hover:bg-white/10' 
-                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800'
-                      }`}
-                      title="Go Back"
-                    >
-                      <ChevronRight className="w-4 h-4 rotate-180" />
-                    </motion.button>
-                  )}
                   <motion.button 
                     {...hoverTapProps(1.05, 0.95)}
                     onClick={() => fetchFiles()}
@@ -1272,27 +1259,45 @@ export default function App() {
                     />
                   </div>
                   
-                  {isLoggedIn && (
-                    <div className="flex items-center gap-2">
-                      <button 
-                         onClick={() => setShowFolderInput(!showFolderInput)}
-                         className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors duration-150 cursor-pointer ${
-                           isDarkActive ? 'bg-white/20 hover:bg-white/30 border border-white/20 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
-                         }`}
+                  <div className="flex items-center gap-2 md:justify-end shrink-0">
+                    {folderStack.length > 0 && (
+                      <motion.button 
+                        {...hoverTapProps(1.05, 0.95)}
+                        onClick={goBack}
+                        className={`group px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 border transition-all duration-150 shadow-sm cursor-pointer ${
+                          isDarkActive 
+                            ? 'bg-red-500/20 hover:bg-red-500/30 border-red-500/30 text-red-400' 
+                            : 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100/80 shadow-xs'
+                        }`}
+                        title="Go Back"
                       >
-                         <FolderOpen className="w-3.5 h-3.5 text-amber-500" />
-                         Directory
-                      </button>
-                      <button 
-                         onClick={() => fileInputRef.current?.click()}
-                         disabled={uploading}
-                         className="bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-red-700 transition-colors duration-150 active:scale-95 disabled:opacity-50 shadow-lg shadow-red-600/20 cursor-pointer"
-                      >
-                        <Upload className="w-3.5 h-3.5" />
-                        {uploading ? `${uploadProgress}%` : 'Upload'}
-                      </button>
-                    </div>
-                  )}
+                        <ArrowLeft className="w-3.5 h-3.5 shrink-0 transition-transform group-hover:-translate-x-1" />
+                        <span>Back...</span>
+                      </motion.button>
+                    )}
+
+                    {isLoggedIn && (
+                      <>
+                        <button 
+                           onClick={() => setShowFolderInput(!showFolderInput)}
+                           className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors duration-150 cursor-pointer ${
+                             isDarkActive ? 'bg-white/20 hover:bg-white/30 border border-white/20 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
+                           }`}
+                        >
+                           <FolderOpen className="w-3.5 h-3.5 text-amber-500" />
+                           Directory
+                        </button>
+                        <button 
+                           onClick={() => fileInputRef.current?.click()}
+                           disabled={uploading}
+                           className="bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-red-700 transition-colors duration-150 active:scale-95 disabled:opacity-50 shadow-lg shadow-red-600/20 cursor-pointer"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          {uploading ? `${uploadProgress}%` : 'Upload'}
+                        </button>
+                      </>
+                    )}
+                  </div>
                   <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
                 </div>
 
