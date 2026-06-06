@@ -95,6 +95,13 @@ export default function App() {
   const [activeItemMenu, setActiveItemMenu] = useState<string | null>(null);
   const navigationCountRef = useRef(0);
 
+  const [showAnnouncement, setShowAnnouncement] = useState(() => {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem('has_seen_announcement_v3') !== 'true';
+    }
+    return true;
+  });
+
   const lowSpecMode = false;
 
   const [darkMode, setDarkMode] = useState(() => {
@@ -1619,6 +1626,113 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Announcement Modal Overlay */}
+      <AnimatePresence>
+        {showAnnouncement && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[9999] flex items-center justify-center p-4 overflow-y-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              transition={{ type: "spring", duration: 0.6, bounce: 0.15 }}
+              className={`relative w-full max-w-lg rounded-3xl overflow-hidden border transition-all duration-300 shadow-[0_0_60px_-15px_rgba(239,68,68,0.4)] ${
+                isDarkActive 
+                  ? 'bg-slate-950/80 border-white/10 text-white backdrop-blur-xl' 
+                  : 'bg-slate-950/85 border-white/15 text-white backdrop-blur-xl'
+              }`}
+            >
+              {/* Top Neon Accent Strip */}
+              <div className="h-1.5 bg-gradient-to-r from-red-500 via-amber-500 to-red-600" />
+
+              {/* Decorative Subtle Radial Radial Shadow */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
+
+              {/* Close Button X */}
+              <button
+                onClick={() => {
+                  setShowAnnouncement(false);
+                  localStorage.setItem('has_seen_announcement_v3', 'true');
+                }}
+                className="absolute top-5 right-5 p-2 rounded-full transition-all duration-150 cursor-pointer text-slate-400 hover:text-white hover:bg-white/10"
+                aria-label="Close Announcement"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="p-6 md:p-8 space-y-6 relative z-10">
+                {/* Warning Header Symbol */}
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 animate-pulse">
+                    <AlertCircle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400 block mb-0.5">Alert Announcement</span>
+                    <h3 className="text-xl md:text-2xl font-black uppercase tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-red-200 via-white to-red-200">
+                      PENTING! BACA INI DULU!
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Message Body */}
+                <div className="space-y-4 text-sm md:text-[15px] leading-relaxed text-slate-300">
+                  <p className="font-extrabold text-white text-base">
+                    Halo para member di luar sana! 👋
+                  </p>
+                  <p>
+                    Berhubung lagi marak banget oknum penipuan yang mengatasnamakan <span className="font-black text-red-400 underline decoration-red-500/50 underline-offset-4">TempestaCloudy</span> dan meminta bayaran secara ilegal, kami mau ngingetin biar kamu gak gampang terkecoh.
+                  </p>
+                  
+                  {/* Highlighted Link Section (Glassmorphism with red stroke) */}
+                  <div className="p-4 md:p-5 rounded-2xl border bg-gradient-to-b from-red-500/5 to-transparent border-red-500/20 shadow-[inset_0_1px_20px_rgba(239,68,68,0.05)] text-center my-5">
+                    <p className="text-[10px] uppercase tracking-[0.2em] font-black text-red-400 mb-2">
+                      Ingat ya, website official kita CUMA SATU:
+                    </p>
+                    <a 
+                      href="https://tempestacloudy.my.id" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2.5 text-md md:text-xl font-black text-red-400 hover:text-red-300 hover:scale-103 transition-all duration-200 hover:underline hover:underline-offset-4"
+                    >
+                      <span>🌐 Tempestacloudy.my.id</span>
+                      <ExternalLink className="w-4 h-4 text-red-400 shrink-0" />
+                    </a>
+                  </div>
+
+                  <p className="font-bold text-white leading-snug">
+                    Kami tidak bertanggung jawab kalau kamu pakai aplikasi yang bukan dari web resmi kami.
+                  </p>
+
+                  <p className="text-slate-400 text-xs md:text-sm">
+                    Jadi, pastikan selalu cek ulang! Tetap aman dan <span className="italic font-bold text-red-400">Always Enjoy... 😄</span>
+                  </p>
+                </div>
+
+                {/* Confirm/Dismiss Buttons */}
+                <div className="pt-2">
+                  <motion.button
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setShowAnnouncement(false);
+                      localStorage.setItem('has_seen_announcement_v3', 'true');
+                    }}
+                    className="w-full py-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-200 shadow-md shadow-red-500/20 hover:shadow-red-500/30 flex items-center justify-center gap-2.5 cursor-pointer"
+                  >
+                    <span>SAYA PAHAM</span>
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
