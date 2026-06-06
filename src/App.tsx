@@ -95,12 +95,7 @@ export default function App() {
   const [activeItemMenu, setActiveItemMenu] = useState<string | null>(null);
   const navigationCountRef = useRef(0);
 
-  const [showAnnouncement, setShowAnnouncement] = useState(() => {
-    if (typeof localStorage !== 'undefined') {
-      return localStorage.getItem('has_seen_announcement_v3') !== 'true';
-    }
-    return true;
-  });
+  const [showAnnouncement, setShowAnnouncement] = useState(true);
 
   const lowSpecMode = false;
 
@@ -1657,7 +1652,6 @@ export default function App() {
               <button
                 onClick={() => {
                   setShowAnnouncement(false);
-                  localStorage.setItem('has_seen_announcement_v3', 'true');
                 }}
                 className="absolute top-5 right-5 z-50 p-2 rounded-full transition-all duration-150 cursor-pointer text-slate-400 hover:text-white hover:bg-white/10"
                 aria-label="Close Announcement"
@@ -1720,7 +1714,6 @@ export default function App() {
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       setShowAnnouncement(false);
-                      localStorage.setItem('has_seen_announcement_v3', 'true');
                     }}
                     className="w-full py-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-200 shadow-md shadow-red-500/20 hover:shadow-red-500/30 flex items-center justify-center gap-2.5 cursor-pointer"
                   >
