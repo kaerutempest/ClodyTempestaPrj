@@ -1659,7 +1659,7 @@ export default function App() {
                   setShowAnnouncement(false);
                   localStorage.setItem('has_seen_announcement_v3', 'true');
                 }}
-                className="absolute top-5 right-5 p-2 rounded-full transition-all duration-150 cursor-pointer text-slate-400 hover:text-white hover:bg-white/10"
+                className="absolute top-5 right-5 z-50 p-2 rounded-full transition-all duration-150 cursor-pointer text-slate-400 hover:text-white hover:bg-white/10"
                 aria-label="Close Announcement"
               >
                 <X className="w-5 h-5" />
