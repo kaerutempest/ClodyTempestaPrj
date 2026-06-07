@@ -34,6 +34,7 @@ import {
   Sun
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { QRIS_BASE64 } from './qrisData';
 
 interface FileMetadata {
   id: string;
@@ -97,41 +98,6 @@ export default function App() {
 
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   const [showQrisModal, setShowQrisModal] = useState(false);
-  const [qrisSrcIndex, setQrisSrcIndex] = useState(0);
-  const [isQrisLoading, setIsQrisLoading] = useState(true);
-
-  const qrisSources = [
-    "/qris.jpg",
-    "/qris.png",
-    "https://i.postimg.cc/dVC6MXqM/Qris.jpg",
-    "https://raw.githubusercontent.com/kaerutempest/ClodyTempestaPrj/main/Qris.jpg"
-  ];
-
-  // Warm up the image cache for absolutely instant loading of the QRIS image
-  useEffect(() => {
-    qrisSources.forEach(src => {
-      const img = new Image();
-      img.src = src;
-    });
-  }, []);
-
-  // Reset QRIS source sequence when user opens the modal to retry the fastest local source first
-  useEffect(() => {
-    if (showQrisModal) {
-      setQrisSrcIndex(0);
-      setIsQrisLoading(true);
-    }
-  }, [showQrisModal]);
-
-  const handleQrisError = () => {
-    if (qrisSrcIndex < qrisSources.length - 1) {
-      console.warn(`QRIS load failed from: ${qrisSources[qrisSrcIndex]}. Falling back to the next backup source: ${qrisSources[qrisSrcIndex + 1]}`);
-      setQrisSrcIndex(prev => prev + 1);
-      setIsQrisLoading(true);
-    } else {
-      console.error("All QRIS sources failed to load.");
-    }
-  };
 
   const lowSpecMode = false;
 
@@ -1815,22 +1781,10 @@ export default function App() {
                 </p>
 
                 {/* QRIS Image Frame */}
-                <div className="bg-white p-1 rounded-2xl max-w-[320px] sm:max-w-[350px] mx-auto shadow-inner border border-white/10 flex flex-col items-center justify-center relative overflow-hidden min-h-[280px] sm:min-h-[310px]">
-                  {isQrisLoading && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 rounded-2xl">
-                      <div className="flex flex-col items-center gap-3 p-4">
-                        <RefreshCw className="w-8 h-8 animate-spin text-red-500" />
-                        <span className="text-[10px] font-black tracking-widest text-slate-300 uppercase">Memuat QRIS...</span>
-                      </div>
-                    </div>
-                  )}
+                <div className="bg-white p-1 rounded-2xl max-w-[320px] sm:max-w-[350px] mx-auto shadow-inner border border-white/10 flex flex-col items-center justify-center relative overflow-hidden">
                   <img 
-                    src={qrisSources[qrisSrcIndex]} 
+                    src={QRIS_BASE64} 
                     alt="Donate QRIS" 
-                    referrerPolicy="no-referrer"
-                    onLoad={() => setIsQrisLoading(false)}
-                    onError={handleQrisError}
-                    style={{ opacity: isQrisLoading ? 0 : 1, transition: 'opacity 0.2s ease-in-out' }}
                     className="w-full h-auto rounded-xl select-none"
                   />
                 </div>
