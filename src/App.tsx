@@ -1780,12 +1780,12 @@ export default function App() {
                 </p>
 
                 {/* QRIS Image Frame */}
-                <div className="bg-white p-3.5 rounded-2xl max-w-[270px] mx-auto shadow-inner border border-white/10 flex items-center justify-center">
+                <div className="bg-white p-1 rounded-2xl max-w-[350px] mx-auto shadow-inner border border-white/10 flex items-center justify-center">
                   <img 
                     src="/qris.png" 
                     alt="Donate QRIS" 
                     referrerPolicy="no-referrer"
-                    className="w-full h-auto rounded-lg select-none"
+                    className="w-full h-auto rounded-xl select-none"
                   />
                 </div>
 
