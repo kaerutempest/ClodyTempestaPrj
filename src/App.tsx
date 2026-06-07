@@ -96,6 +96,7 @@ export default function App() {
   const navigationCountRef = useRef(0);
 
   const [showAnnouncement, setShowAnnouncement] = useState(true);
+  const [showQrisModal, setShowQrisModal] = useState(false);
 
   const lowSpecMode = false;
 
@@ -794,7 +795,9 @@ export default function App() {
           <div className="flex items-center gap-2 md:gap-4">
             <nav className={`hidden md:flex items-center gap-4 text-[10px] font-black uppercase tracking-widest drop-shadow-sm ${isDarkActive ? 'text-white font-black' : 'text-slate-600'}`}>
               <button onClick={navigateToHome} className="hover:text-red-400 transition-colors flex items-center gap-2 cursor-pointer"><Home className="w-3.5 h-3.5"/> Beranda</button>
-              <a href="https://saweria.co/Kaedesu" target="_blank" className="hover:text-pink-400 transition-colors flex items-center gap-2 cursor-pointer"><Heart className="w-3.5 h-3.5"/> Donate</a>
+              <button onClick={() => setShowQrisModal(true)} className="hover:text-pink-400 transition-colors flex items-center gap-2 cursor-pointer">
+                <Heart className="w-3.5 h-3.5"/> Traktir Kopi 😄
+              </button>
             </nav>
             <div className={`h-5 w-px hidden md:block ${isDarkActive ? 'bg-white/20' : 'bg-slate-200'}`} />
             
@@ -1024,16 +1027,14 @@ export default function App() {
               >
                 <Home className="w-5 h-5 text-red-500" /> Beranda
               </button>
-              <a 
-                href="https://saweria.co/Kaedesu" 
-                target="_blank" 
-                className={`block w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-colors drop-shadow-sm ${
+              <button 
+                onClick={() => { setShowQrisModal(true); setShowMobileMenu(false); }} 
+                className={`w-full text-left font-bold flex items-center gap-3 p-3 rounded-xl transition-colors drop-shadow-sm cursor-pointer ${
                   isDarkActive ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50'
                 }`}
-                onClick={() => setShowMobileMenu(false)}
               >
-                <Heart className="w-5 h-5 text-pink-500" /> Support/Donate
-              </a>
+                <Heart className="w-5 h-5 text-pink-500" /> Traktir Kopi 😄
+              </button>
               {isLoggedIn && (
                 <button 
                   onClick={() => { toggleMaintenance(); setShowMobileMenu(false); }} 
@@ -1155,9 +1156,9 @@ export default function App() {
                     <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2 animate-none">SUPPORT US! 🔥</h2>
                     <p className={`text-sm max-w-lg font-bold ${isDarkActive ? 'text-white' : 'text-red-100'}`}>Support kami agar bisa terus melakukan update setiap hari dan tetap menyediakan layanan gratis!</p>
                     <div className="flex gap-3 pt-3">
-                       <a href="https://saweria.co/Kaedesu" target="_blank" className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${
+                       <button onClick={() => setShowQrisModal(true)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors cursor-pointer ${
                          isDarkActive ? 'bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/20' : 'bg-white text-red-600 hover:bg-red-50'
-                       }`}>Saweria</a>
+                       }`}>Traktir Kopi 😄</button>
                     </div>
                  </div>
               </div>
@@ -1719,6 +1720,83 @@ export default function App() {
                   >
                     <span>SAYA PAHAM</span>
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* QRIS Modal Overlay */}
+      <AnimatePresence>
+        {showQrisModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[9999] flex items-center justify-center p-4 overflow-y-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              transition={{ type: "spring", duration: 0.6, bounce: 0.15 }}
+              className={`relative w-full max-w-md rounded-3xl overflow-hidden border transition-all duration-300 shadow-[0_0_60px_-15px_rgba(239,68,68,0.4)] ${
+                isDarkActive 
+                  ? 'bg-slate-950/80 border-white/10 text-white backdrop-blur-xl' 
+                  : 'bg-slate-900 border border-white/10 text-white shadow-lg'
+              }`}
+            >
+              {/* Top Neon Accent Strip */}
+              <div className="h-1.5 bg-gradient-to-r from-red-500 via-amber-500 to-red-600" />
+
+              {/* Close Button X */}
+              <button
+                onClick={() => setShowQrisModal(false)}
+                className="absolute top-5 right-5 z-50 p-2 rounded-full transition-all duration-150 cursor-pointer text-slate-400 hover:text-white hover:bg-white/10"
+                aria-label="Close QRIS Modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="p-6 md:p-8 space-y-5 text-center relative z-10">
+                {/* Header Symbol */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-505 font-bold shrink-0">
+                    <Heart className="w-6 h-6 animate-pulse text-red-500 fill-red-500" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400 block mb-0.5">SUPPORT...</span>
+                    <h3 className="text-xl font-black uppercase tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-red-200 via-white to-red-200">
+                      Traktir Kopi...
+                    </h3>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-300 max-w-sm mx-auto font-bold leading-relaxed">
+                  Suport Admin biar makin semangat buat update... <br />
+                  Thank you, Hooman! 🐱❤️
+                </p>
+
+                {/* QRIS Image Frame */}
+                <div className="bg-white p-3.5 rounded-2xl max-w-[270px] mx-auto shadow-inner border border-white/10 flex items-center justify-center">
+                  <img 
+                    src="/qris.png" 
+                    alt="Donate QRIS" 
+                    referrerPolicy="no-referrer"
+                    className="w-full h-auto rounded-lg select-none"
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <motion.button
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowQrisModal(false)}
+                    className="w-full py-3.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-200 shadow-md shadow-red-500/20 hover:shadow-red-500/30 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>SAYA PAHAM & TUTUP</span>
                   </motion.button>
                 </div>
               </div>

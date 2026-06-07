@@ -751,6 +751,28 @@ app.get('/local-bg/:filename', (req, res) => {
   res.sendFile(filePath);
 });
 
+app.get('/qris.png', (req, res) => {
+  const filePath = path.join(process.cwd(), 'qris.png');
+  if (fs.existsSync(filePath)) {
+    return res.sendFile(filePath);
+  }
+  const uploadDir = path.join(process.cwd(), '.data', 'uploads');
+  if (fs.existsSync(uploadDir)) {
+    const files = fs.readdirSync(uploadDir);
+    const qrisOption = files.find(f => f.startsWith('bfaded6f9020d992553b5659973096ce') || f.endsWith('.png'));
+    if (qrisOption) {
+      const srcPath = path.join(uploadDir, qrisOption);
+      try {
+        fs.copyFileSync(srcPath, filePath);
+        return res.sendFile(filePath);
+      } catch (err) {
+        return res.sendFile(srcPath);
+      }
+    }
+  }
+  res.status(404).send('QRIS image not found');
+});
+
 // --- Server Setup ---
 
 // Export for Vercel
