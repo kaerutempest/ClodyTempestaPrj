@@ -145,8 +145,33 @@ export default function App() {
       const res = await fetch('/api/settings');
       const data = await res.json();
       setBackgroundImage(data.backgroundImage || data.defaultBackground || '');
-      setMaintenanceMode(!!data.maintenanceMode);
+      
+      const serverMaintenance = !!data.maintenanceMode;
+      setMaintenanceMode(serverMaintenance);
       setBackgroundLocked(!!data.backgroundLocked);
+
+      // Self-healing synchronization for maintenance state across stateless container instances
+      const localAdminPass = localStorage.getItem('admin_pass') || '';
+      if (localAdminPass) {
+        const storedAdminMaintenanceState = localStorage.getItem('admin_maintenance_on');
+        if (storedAdminMaintenanceState === 'true' && !serverMaintenance) {
+          console.warn('Sync alert: Server lost maintenance state (likely scale-to-zero or container restart). Restoring maintenance mode from Admin session storage.');
+          fetch('/api/settings/maintenance', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'x-admin-password': localAdminPass 
+            },
+            body: JSON.stringify({ enabled: true })
+          }).then(repairRes => {
+            if (repairRes.ok) {
+              setMaintenanceMode(true);
+            }
+          });
+        } else if (storedAdminMaintenanceState !== (serverMaintenance ? 'true' : 'false')) {
+          localStorage.setItem('admin_maintenance_on', serverMaintenance ? 'true' : 'false');
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch settings', err);
     } finally {
@@ -590,6 +615,7 @@ export default function App() {
 
   const toggleMaintenance = async () => {
     if (!isLoggedIn) return;
+    const targetState = !maintenanceMode;
     try {
       const res = await fetch('/api/settings/maintenance', {
         method: 'POST',
@@ -597,10 +623,11 @@ export default function App() {
           'Content-Type': 'application/json',
           'x-admin-password': adminPassword 
         },
-        body: JSON.stringify({ enabled: !maintenanceMode })
+        body: JSON.stringify({ enabled: targetState })
       });
       if (res.ok) {
-        setMaintenanceMode(!maintenanceMode);
+        setMaintenanceMode(targetState);
+        localStorage.setItem('admin_maintenance_on', targetState ? 'true' : 'false');
       }
     } catch (err) {
       console.error('Toggle maintenance failed', err);

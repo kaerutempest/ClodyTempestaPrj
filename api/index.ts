@@ -42,7 +42,22 @@ const ADMIN_PASSWORD = getAdminPassword();
 const app = express();
 
 const isVercel = !!process.env.VERCEL;
-const dataDir = isVercel ? '/tmp/.data' : path.join(process.cwd(), '.data');
+let dataDir = path.join(process.cwd(), '.data');
+
+if (isVercel) {
+  dataDir = '/tmp/.data';
+} else {
+  // Perform runtime write test on the .data path. If it is read-only, fallback to standard /tmp/.data
+  try {
+    fs.mkdirSync(dataDir, { recursive: true });
+    const testFile = path.join(dataDir, '.write_test');
+    fs.writeFileSync(testFile, 'test');
+    fs.unlinkSync(testFile);
+  } catch (err) {
+    console.warn('.data directory under root path is not writable, falling back to /tmp/.data: ', err);
+    dataDir = '/tmp/.data';
+  }
+}
 
 // Ensure uploads directory exists for local/container dev
 const uploadDir = path.join(dataDir, 'uploads');
@@ -73,7 +88,7 @@ interface FileMetadata {
 }
 
 let filesMetadata: Record<string, FileMetadata> = {};
-let settings: { backgroundImage: string; maintenanceMode?: boolean; backgroundLocked?: boolean } = { backgroundImage: '' };
+let settings: { backgroundImage: string; maintenanceMode: boolean; backgroundLocked: boolean } = { backgroundImage: '', maintenanceMode: false, backgroundLocked: false };
 
 const saveMetadata = () => {
   const tmpPath = metadataFilePath + '.tmp';
