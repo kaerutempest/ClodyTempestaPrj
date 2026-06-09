@@ -102,22 +102,10 @@ export default function App() {
 
   const lowSpecMode = false;
 
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof localStorage !== 'undefined') {
-      const stored = localStorage.getItem('admin_dark_mode');
-      if (stored !== null) {
-        return stored === 'true';
-      }
-    }
-    return true;
-  });
+  const [darkMode, setDarkMode] = useState(true);
 
   const toggleDarkMode = () => {
-    setDarkMode((prev) => {
-      const next = !prev;
-      localStorage.setItem('admin_dark_mode', String(next));
-      return next;
-    });
+    // No-op to keep dark mode persistently active per user specification
   };
 
   const isDarkActive = !!(backgroundImage || darkMode);
