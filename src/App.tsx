@@ -808,8 +808,7 @@ export default function App() {
           isDarkActive ? 'bg-slate-950/75 backdrop-blur-md border-white/15 text-white shadow-lg' : 'bg-white/90 backdrop-blur-md max-md:backdrop-blur-[3px] border-slate-200 shadow-sm text-slate-800'
         }`}>
            <div 
-            className="flex items-center gap-3 cursor-pointer group" 
-            onClick={navigateToHome}
+            className="flex items-center gap-3 cursor-default select-none group" 
             
           >
             <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-md md:group-hover:scale-105 transition-transform duration-150 transform-gpu overflow-hidden ${
@@ -822,7 +821,7 @@ export default function App() {
               <motion.div 
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 450, damping: 12 }}
-                className="relative inline-block cursor-pointer electric-wipe-container"
+                className="relative inline-block cursor-default electric-wipe-container"
               >
                 {/* 1. Underlying Dim Text Layer (Always visible, clean, flat, non-glowing and dim) */}
                 <div className="relative select-none opacity-25 mt-px">
@@ -1044,13 +1043,12 @@ export default function App() {
             ) : (
               <div className="flex items-center gap-4">
                 <div 
-                  className={`text-[10px] md:text-xs font-black px-3 py-1.5 rounded-lg uppercase tracking-wider select-none flex items-center gap-1.5 ${
+                  className={`text-[10px] md:text-xs font-black px-3 py-1.5 rounded-lg uppercase tracking-wider select-none ${
                     isDarkActive 
                       ? 'bg-white/10 text-white/80 border border-white/15 backdrop-blur-xs' 
                       : 'bg-slate-200 text-slate-600 border border-slate-300 shadow-sm'
                   }`}
                 >
-                  <Lock className="w-3 h-3 text-red-500" />
                   <span>Guest</span>
                 </div>
               </div>
