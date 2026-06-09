@@ -818,7 +818,32 @@ export default function App() {
               <Cloud className="w-4.5 h-4.5 text-slate-100 opacity-30 md:group-hover:scale-115 transition-transform duration-150" />
               <Zap className="absolute inset-0 m-auto w-4 h-4 text-red-500 fill-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]" />
             </div>
-            <span className={`text-base font-black tracking-tighter group-hover:text-red-500 transition-colors uppercase drop-shadow-sm ${isDarkActive ? 'text-white' : 'text-slate-800'}`}>Tempesta <span className={isDarkActive ? 'text-white/70 font-bold' : 'text-slate-400 font-medium'}>Cloudy</span></span>
+            <div className="flex items-center select-none font-sans">
+              <motion.div 
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 450, damping: 12 }}
+                className="relative inline-block cursor-pointer"
+              >
+                {/* Background Glow Layer (GPU Accelerated - Static Raster) */}
+                <div 
+                  className={`absolute inset-0 select-none pointer-events-none will-change-transform-opacity font-black tracking-tighter uppercase whitespace-nowrap text-base ${
+                    isDarkActive ? 'lightning-glow-dark' : 'lightning-glow-light'
+                  }`}
+                  aria-hidden="true"
+                >
+                  Tempesta <span className="text-red-500">Cloudy</span>
+                </div>
+
+                {/* Main Foreground Text (GPU Accelerated Flicker) */}
+                <div 
+                  className={`text-base font-black tracking-tighter uppercase relative z-10 will-change-transform-opacity whitespace-nowrap ${
+                    isDarkActive ? 'lightning-text-dark' : 'lightning-text-light'
+                  }`}
+                >
+                  Tempesta <span className={isDarkActive ? 'text-red-400' : 'text-red-500'}>Cloudy</span>
+                </div>
+              </motion.div>
+            </div>
           </div>
           
           <div className="flex items-center gap-2 md:gap-4">
