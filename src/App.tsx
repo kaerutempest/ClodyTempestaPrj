@@ -1433,29 +1433,20 @@ export default function App() {
                        <span className={`hidden md:block text-center text-xs font-medium ${isDarkActive ? 'text-white/80 drop-shadow-sm' : 'text-slate-500'}`}>{file.type === 'folder' ? '-' : formatSize(file.size)}</span>
                        <span className={`hidden md:block text-right text-xs font-medium ${isDarkActive ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>{new Date(file.uploadDate).toLocaleDateString()}</span>
                        {renamingFileId !== file.id && (
-                         <div className="flex justify-end gap-1 relative shrink-0">
+                         <div className="flex justify-end gap-1.5 relative shrink-0 items-center">
                             {file.type !== 'folder' && (
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   window.location.href = `/download/${file.id}`;
                                 }}
-                                className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-500/5 transition-all"
+                                className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 dark:text-red-400 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
                                 title="Download"
                               >
-                                <Download className="w-4 h-4" />
+                                <Download className="w-3 h-3" />
+                                <span>Download</span>
                               </button>
                             )}
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyLink(file.id);
-                              }}
-                              className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-500/5 transition-all"
-                              title="Copy Link"
-                            >
-                              <Share2 className="w-4 h-4" />
-                            </button>
                             
                             {isLoggedIn && (
                               <>

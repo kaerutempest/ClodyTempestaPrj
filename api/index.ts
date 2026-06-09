@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import https from 'https';
 import { Octokit } from "@octokit/core";
 import { restEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";
 import { paginateRest } from "@octokit/plugin-paginate-rest";
@@ -727,13 +728,54 @@ app.get('/api/folder-path/:id', (req, res) => {
   res.json(list);
 });
 
+const streamFromUrl = (url: string, res: express.Response, filename?: string, attempts = 0) => {
+  if (attempts > 5) {
+    return res.status(500).send('Too many redirects');
+  }
+
+  https.get(url, (githubRes) => {
+    const statusCode = githubRes.statusCode || 0;
+
+    // Follow HTTP redirects safely
+    if (statusCode >= 300 && statusCode < 400 && githubRes.headers.location) {
+      return streamFromUrl(githubRes.headers.location, res, filename, attempts + 1);
+    }
+
+    if (statusCode >= 400) {
+      return res.status(statusCode).send(`Error downloading from storage: ${githubRes.statusMessage || statusCode}`);
+    }
+
+    if (filename) {
+      // Decode and recode to handle special non-ascii characters nicely
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+    }
+    
+    if (githubRes.headers['content-type']) {
+      res.setHeader('Content-Type', githubRes.headers['content-type'] as string);
+    } else {
+      res.setHeader('Content-Type', filename ? 'application/vnd.android.package-archive' : 'application/octet-stream');
+    }
+    
+    if (githubRes.headers['content-length']) {
+      res.setHeader('Content-Length', githubRes.headers['content-length'] as string);
+    }
+
+    githubRes.pipe(res);
+  }).on('error', (err) => {
+    console.error('Streaming failed:', err);
+    if (!res.headersSent) {
+      res.status(500).send('Connection failed while streaming package');
+    }
+  });
+};
+
 app.get('/download/:id', (req, res) => {
   const id = req.params.id;
   const metadata = filesMetadata[id];
   if (!metadata) return res.status(404).send('File not found');
   
   if (metadata.githubDownloadUrl) {
-    return res.redirect(metadata.githubDownloadUrl);
+    return streamFromUrl(metadata.githubDownloadUrl, res, metadata.originalName);
   }
 
   const files = fs.readdirSync(uploadDir);
@@ -747,7 +789,7 @@ app.get('/preview/:id', (req, res) => {
   const metadata = filesMetadata[id];
   
   if (metadata && metadata.githubDownloadUrl) {
-    return res.redirect(metadata.githubDownloadUrl);
+    return streamFromUrl(metadata.githubDownloadUrl, res);
   }
 
   const files = fs.readdirSync(uploadDir);
