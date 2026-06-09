@@ -4,64 +4,75 @@ html, body {
   overscroll-behavior: none;
 }
 
-/* High-Performance 60FPS/120FPS GPU hardware-accelerated animations */
+/* High-Performance 60FPS/120FPS GPU hardware-accelerated animations (Vivid Electric Sweep) */
 @keyframes lightning-glow-flicker-dark {
-  0%, 15%, 19%, 23%, 25%, 85%, 89%, 93%, 100% {
-    opacity: 0.15;
-    transform: translate3d(0, 0, 0) scale3d(0.99, 0.99, 1);
+  0%, 100% {
+    opacity: 0.95;
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.9)) drop-shadow(0 0 20px rgba(239, 68, 68, 0.6));
+    transform: translate3d(0, 0, 0);
   }
-  17%, 21%, 87%, 91% {
-    opacity: 0.85;
+  7%, 13%, 21%, 35%, 63%, 81%, 90% {
+    opacity: 1;
+    filter: drop-shadow(0 0 14px rgba(255, 60, 60, 1)) drop-shadow(0 0 28px rgba(239, 68, 68, 0.85));
     transform: translate3d(-0.5px, 0.25px, 0) scale3d(1.02, 1.02, 1);
   }
-  18%, 22%, 88%, 92% {
-    opacity: 0.05;
+  9%, 15%, 23%, 37%, 65%, 83%, 92% {
+    opacity: 0.25;
+    filter: drop-shadow(0 0 3px rgba(239, 68, 68, 0.3));
     transform: translate3d(0.5px, -0.25px, 0) scale3d(0.98, 0.98, 1);
+  }
+  11%, 17%, 25%, 39%, 67%, 85%, 94% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @keyframes lightning-text-flicker-dark {
-  0%, 15%, 19%, 23%, 25%, 85%, 89%, 93%, 100% {
+  0%, 100% {
     opacity: 0.95;
     transform: translate3d(0, 0, 0);
   }
-  17%, 21%, 87%, 91% {
+  7%, 13%, 21%, 35%, 63%, 81%, 90% {
     opacity: 1;
-    transform: translate3d(-0.25px, 0.25px, 0) scale3d(1.01, 1.01, 1);
+    transform: translate3d(-0.25px, 0.25px, 0) scale(1.01);
   }
-  18%, 22%, 88%, 92% {
-    opacity: 0.75;
-    transform: translate3d(0.25px, -0.25px, 0) scale3d(0.99, 0.99, 1);
+  9%, 15%, 23%, 37%, 65%, 83%, 92% {
+    opacity: 0.35;
+    transform: translate3d(0.25px, -0.25px, 0) scale(0.99);
   }
 }
 
 @keyframes lightning-glow-flicker-light {
-  0%, 15%, 19%, 23%, 25%, 85%, 89%, 93%, 100% {
-    opacity: 0.05;
-    transform: translate3d(0, 0, 0) scale3d(0.99, 0.99, 1);
+  0%, 100% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.75));
+    transform: translate3d(0, 0, 0);
   }
-  17%, 21%, 87%, 91% {
-    opacity: 0.6;
+  7%, 13%, 21%, 35%, 63%, 81%, 90% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.95));
     transform: translate3d(-0.5px, 0.25px, 0) scale3d(1.02, 1.02, 1);
   }
-  18%, 22%, 88%, 92% {
-    opacity: 0;
+  9%, 15%, 23%, 37%, 65%, 83%, 92% {
+    opacity: 0.2;
+    filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.2));
     transform: translate3d(0.5px, -0.25px, 0) scale3d(0.98, 0.98, 1);
   }
 }
 
 @keyframes lightning-text-flicker-light {
-  0%, 15%, 19%, 23%, 25%, 85%, 89%, 93%, 100% {
-    opacity: 0.98;
+  0%, 100% {
+    opacity: 0.95;
     transform: translate3d(0, 0, 0);
   }
-  17%, 21%, 87%, 91% {
+  7%, 13%, 21%, 35%, 63%, 81%, 90% {
     opacity: 1;
-    transform: translate3d(-0.25px, 0.25px, 0) scale3d(1.01, 1.01, 1);
+    transform: translate3d(-0.25px, 0.25px, 0) scale(1.01);
   }
-  18%, 22%, 88%, 92% {
-    opacity: 0.85;
-    transform: translate3d(0.25px, -0.25px, 0) scale3d(0.99, 0.99, 1);
+  9%, 15%, 23%, 37%, 65%, 83%, 92% {
+    opacity: 0.3;
+    transform: translate3d(0.25px, -0.25px, 0) scale(0.99);
   }
 }
 
@@ -72,26 +83,116 @@ html, body {
   transform: translate3d(0, 0, 0);
 }
 
-.lightning-glow-dark {
+/* Custom Dim Base States */
+.tempest-dim-text-dark {
+  color: rgba(226, 232, 240, 0.28);
+  text-shadow: 0 0 1px rgba(239, 68, 68, 0.15);
+  transition: color 0.5s ease;
+}
+.tempest-dim-text-light {
+  color: rgba(15, 23, 42, 0.18);
+  text-shadow: none;
+  transition: color 0.5s ease;
+}
+
+/* Custom Charged Wrapper & Animations */
+.tempest-charged-wrapper {
+  animation: tempest-sweep-clip 8s infinite cubic-bezier(0.4, 0, 0.2, 1), tempest-fade-out 8s infinite ease-out;
+}
+
+.tempest-glow-dark {
   color: #ef4444;
   text-shadow: 0 0 8px rgba(239, 68, 68, 0.85), 0 0 15px rgba(239, 68, 68, 0.55);
-  animation: lightning-glow-flicker-dark 7s infinite ease-in-out;
+  animation: lightning-glow-flicker-dark 8s infinite ease-in-out;
 }
 
-.lightning-text-dark {
+.tempest-text-dark {
   color: #ffffff;
-  animation: lightning-text-flicker-dark 7s infinite ease-in-out;
+  animation: lightning-text-flicker-dark 8s infinite ease-in-out;
 }
 
-.lightning-glow-light {
+.tempest-glow-light {
   color: #ef4444;
   text-shadow: 0 0 6px rgba(239, 68, 68, 0.7), 0 0 12px rgba(239, 68, 68, 0.45);
-  animation: lightning-glow-flicker-light 7s infinite ease-in-out;
+  animation: lightning-glow-flicker-light 8s infinite ease-in-out;
 }
 
-.lightning-text-light {
+.tempest-text-light {
   color: #0f172a;
-  animation: lightning-text-flicker-light 7s infinite ease-in-out;
+  animation: lightning-text-flicker-light 8s infinite ease-in-out;
+}
+
+/* Left-to-Right Electric Dissolve Wipe */
+.electric-wipe-container {
+  position: relative;
+  overflow: visible;
+}
+
+/* The vertical lightning edge sweep (sweeps left to right) */
+.electric-wipe-container::after {
+  content: "";
+  position: absolute;
+  top: -15%;
+  bottom: -15%;
+  width: 4px;
+  background: #ffffff;
+  box-shadow: 0 0 8px #ef4444, 0 0 16px #ef4444, 0 0 30px #ff0000, 0 0 40px #ffffff;
+  z-index: 20;
+  pointer-events: none;
+  animation: lightning-edge-sweep 8s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes lightning-edge-sweep {
+  0%, 25% {
+    left: 0%;
+    opacity: 0;
+    transform: scaleY(0.1) skewX(-15deg);
+  }
+  26% {
+    opacity: 1;
+    transform: scaleY(1.4) skewX(-15deg);
+  }
+  56.25% {
+    left: 100%;
+    opacity: 1;
+    transform: scaleY(1.4) skewX(-15deg);
+  }
+  57.5% {
+    opacity: 0;
+    left: 100%;
+    transform: scaleY(0.1);
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes tempest-sweep-clip {
+  0%, 25% {
+    clip-path: inset(0 100% 0 0);
+  }
+  56.25% {
+    clip-path: inset(0 0% 0 0);
+  }
+  100% {
+    clip-path: inset(0 0% 0 0);
+  }
+}
+
+@keyframes tempest-fade-out {
+  0%, 25% {
+    opacity: 0;
+  }
+  26%, 56.25% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Elegant metallic gloss reflection sweep animation */

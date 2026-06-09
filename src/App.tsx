@@ -810,7 +810,7 @@ export default function App() {
            <div 
             className="flex items-center gap-3 cursor-pointer group" 
             onClick={navigateToHome}
-            onDoubleClick={() => setView('login')}
+            
           >
             <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-md md:group-hover:scale-105 transition-transform duration-150 transform-gpu overflow-hidden ${
               isDarkActive ? 'bg-slate-900/40 backdrop-blur-md border border-white/10' : 'bg-linear-to-br from-slate-800 to-slate-900'
@@ -822,25 +822,37 @@ export default function App() {
               <motion.div 
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 450, damping: 12 }}
-                className="relative inline-block cursor-pointer"
+                className="relative inline-block cursor-pointer electric-wipe-container"
               >
-                {/* Background Glow Layer (GPU Accelerated - Static Raster) */}
-                <div 
-                  className={`absolute inset-0 select-none pointer-events-none will-change-transform-opacity font-black tracking-tighter uppercase whitespace-nowrap text-base ${
-                    isDarkActive ? 'lightning-glow-dark' : 'lightning-glow-light'
-                  }`}
-                  aria-hidden="true"
-                >
-                  Tempesta <span className="text-red-500">Cloudy</span>
+                {/* 1. Underlying Dim Text Layer (Always visible, clean, flat, non-glowing and dim) */}
+                <div className="relative select-none opacity-25 mt-px">
+                  <div className={`font-black tracking-tighter uppercase whitespace-nowrap text-base ${isDarkActive ? 'text-white' : 'text-slate-800'}`}>
+                    Tempesta <span className={isDarkActive ? 'text-red-550' : 'text-red-600'}>Cloudy</span>
+                  </div>
                 </div>
 
-                {/* Main Foreground Text (GPU Accelerated Flicker) */}
+                {/* 2. Top "Charged" Glowing Text Layer (Synchronous Left-to-Right Reveal & Fade-out) */}
                 <div 
-                  className={`text-base font-black tracking-tighter uppercase relative z-10 will-change-transform-opacity whitespace-nowrap ${
-                    isDarkActive ? 'lightning-text-dark' : 'lightning-text-light'
-                  }`}
+                  className="absolute inset-0 select-none pointer-events-none whitespace-nowrap text-base font-black tracking-tighter uppercase tempest-charged-wrapper"
+                  aria-hidden="true"
                 >
-                  Tempesta <span className={isDarkActive ? 'text-red-400' : 'text-red-500'}>Cloudy</span>
+                  {/* Background Intense Glow Layer */}
+                  <div 
+                    className={`absolute inset-0 select-none pointer-events-none will-change-transform-opacity font-black tracking-tighter uppercase whitespace-nowrap text-base ${
+                      isDarkActive ? 'tempest-glow-dark' : 'tempest-glow-light'
+                    }`}
+                  >
+                    Tempesta <span className="text-red-500">Cloudy</span>
+                  </div>
+
+                  {/* Main Vivid Foreground Text Layer */}
+                  <div 
+                    className={`absolute inset-0 select-none pointer-events-none will-change-transform-opacity font-black tracking-tighter uppercase whitespace-nowrap text-base ${
+                      isDarkActive ? 'tempest-text-dark' : 'tempest-text-light'
+                    }`}
+                  >
+                    Tempesta <span className={isDarkActive ? 'text-red-400' : 'text-red-500'}>Cloudy</span>
+                  </div>
                 </div>
               </motion.div>
             </div>
@@ -1031,15 +1043,16 @@ export default function App() {
               </div>
             ) : (
               <div className="flex items-center gap-4">
-                <span 
-                  className={`text-[10px] md:text-xs font-bold px-3 py-1 rounded-lg uppercase tracking-wider select-none ${
+                <div 
+                  className={`text-[10px] md:text-xs font-black px-3 py-1.5 rounded-lg uppercase tracking-wider select-none flex items-center gap-1.5 ${
                     isDarkActive 
-                      ? 'bg-white/10 text-white/90 border border-white/20 backdrop-blur-xs' 
-                      : 'bg-slate-200 text-slate-600 border border-slate-350'
+                      ? 'bg-white/10 text-white/80 border border-white/15 backdrop-blur-xs' 
+                      : 'bg-slate-200 text-slate-600 border border-slate-300 shadow-sm'
                   }`}
                 >
-                  Guest
-                </span>
+                  <Lock className="w-3 h-3 text-red-500" />
+                  <span>Guest</span>
+                </div>
               </div>
             )}
             
