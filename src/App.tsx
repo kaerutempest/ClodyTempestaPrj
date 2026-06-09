@@ -803,44 +803,44 @@ export default function App() {
               isDarkActive ? 'bg-slate-900/40 backdrop-blur-md border border-white/10' : 'bg-linear-to-br from-slate-800 to-slate-900'
             }`}>
               <Cloud className="w-4.5 h-4.5 text-slate-100 opacity-30 md:group-hover:scale-115 transition-transform duration-150" />
-              <Zap className="absolute inset-0 m-auto w-4 h-4 text-red-500 fill-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]" />
+              <Zap className="logo-zap-electric absolute inset-0 m-auto w-4 h-4 text-red-500 fill-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]" />
             </div>
             <div className="flex items-center select-none font-sans">
               <motion.div 
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 450, damping: 12 }}
-                className="relative inline-block cursor-default electric-wipe-container"
+                className="logo-glitch-container cursor-default"
               >
-                {/* 1. Underlying Dim Text Layer (Always visible, clean, flat, non-glowing and dim) */}
-                <div className="relative select-none opacity-25 mt-px">
-                  <div className={`font-black tracking-tighter uppercase whitespace-nowrap text-base ${isDarkActive ? 'text-white' : 'text-slate-800'}`}>
-                    Tempesta <span className={isDarkActive ? 'text-red-550' : 'text-red-600'}>Cloudy</span>
-                  </div>
+                {/* 1. Underlying Main Text Layer (Static base that flutters lightly during glitches) */}
+                <div className={`logo-glitch-base font-black tracking-tighter uppercase whitespace-nowrap text-base ${isDarkActive ? 'text-white' : 'text-slate-800'}`}>
+                  Tempesta <span className="text-red-500">Cloudy</span>
                 </div>
 
-                {/* 2. Top "Charged" Glowing Text Layer (Synchronous Left-to-Right Reveal & Fade-out) */}
+                {/* 2. Cyber Cyan Horizontal Slice Offset Layer */}
                 <div 
-                  className="absolute inset-0 select-none pointer-events-none whitespace-nowrap text-base font-black tracking-tighter uppercase tempest-charged-wrapper"
+                  className={`logo-glitch-slice-1 absolute inset-0 select-none pointer-events-none font-black tracking-tighter uppercase whitespace-nowrap text-base ${
+                    isDarkActive ? 'text-white' : 'text-slate-800'
+                  }`}
                   aria-hidden="true"
                 >
-                  {/* Background Intense Glow Layer */}
-                  <div 
-                    className={`absolute inset-0 select-none pointer-events-none will-change-transform-opacity font-black tracking-tighter uppercase whitespace-nowrap text-base ${
-                      isDarkActive ? 'tempest-glow-dark' : 'tempest-glow-light'
-                    }`}
-                  >
-                    Tempesta <span className="text-red-500">Cloudy</span>
-                  </div>
-
-                  {/* Main Vivid Foreground Text Layer */}
-                  <div 
-                    className={`absolute inset-0 select-none pointer-events-none will-change-transform-opacity font-black tracking-tighter uppercase whitespace-nowrap text-base ${
-                      isDarkActive ? 'tempest-text-dark' : 'tempest-text-light'
-                    }`}
-                  >
-                    Tempesta <span className={isDarkActive ? 'text-red-400' : 'text-red-500'}>Cloudy</span>
-                  </div>
+                  Tempesta <span className="text-red-500">Cloudy</span>
                 </div>
+
+                {/* 3. Neon Magenta Horizontal Slice Offset Layer */}
+                <div 
+                  className={`logo-glitch-slice-2 absolute inset-0 select-none pointer-events-none font-black tracking-tighter uppercase whitespace-nowrap text-base ${
+                    isDarkActive ? 'text-white' : 'text-slate-800'
+                  }`}
+                  aria-hidden="true"
+                >
+                  Tempesta <span className="text-red-500">Cloudy</span>
+                </div>
+
+                {/* 4. Interactive Laser Scanline */}
+                <div className="logo-laser-line absolute left-0 right-0 pointer-events-none select-none" aria-hidden="true" />
+
+                {/* 5. CRT Scanline & static grain overlay */}
+                <div className="logo-cyber-crt absolute inset-0 pointer-events-none select-none" aria-hidden="true" />
               </motion.div>
             </div>
           </div>
@@ -874,10 +874,22 @@ export default function App() {
 
             {/* Mobile Menu Toggle */}
             <button 
-              className={`md:hidden p-2 rounded-xl transition-all ${isDarkActive ? 'bg-white/10 text-white border border-white/20 hover:bg-white/20 animate-none' : 'text-slate-600 hover:bg-slate-100 bg-slate-50'}`}
+              className={`md:hidden p-2 rounded-xl transition-all relative overflow-hidden flex items-center justify-center cursor-pointer ${isDarkActive ? 'bg-white/10 text-white border border-white/20 hover:bg-white/20' : 'text-slate-600 hover:bg-slate-100 bg-slate-50'}`}
               onClick={() => setShowMobileMenu(!showMobileMenu)}
+              style={{ width: '38px', height: '38px' }}
             >
-              {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={showMobileMenu ? "close" : "menu"}
+                  initial={{ rotate: -90, opacity: 0, scale: 0.8 }}
+                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                  exit={{ rotate: 90, opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.12, ease: "easeOut" }}
+                  className="flex items-center justify-center transform-gpu"
+                >
+                  {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </motion.div>
+              </AnimatePresence>
             </button>
             
             {isLoggedIn ? (
@@ -1062,14 +1074,22 @@ export default function App() {
         {showMobileMenu && (
           <motion.div 
             {...animProps({
-              initial: { opacity: 0, height: 0 },
-              animate: { opacity: 1, height: 'auto' },
-              exit: { opacity: 0, height: 0 },
-              transition: { duration: 0.15, ease: "easeOut" }
+              initial: { opacity: 0, y: -10, height: 0 },
+              animate: { opacity: 1, y: 0, height: 'auto' },
+              exit: { opacity: 0, y: -10, height: 0 },
+              transition: { 
+                height: { duration: 0.18, ease: [0.16, 1, 0.3, 1] },
+                opacity: { duration: 0.12, ease: "linear" },
+                y: { duration: 0.18, ease: "easeOut" }
+              }
             })}
-            className={`md:hidden border-b overflow-hidden z-40 relative ${
+            className={`md:hidden border-b overflow-hidden z-40 relative transform-gpu ${
               isDarkActive ? 'bg-slate-950/70 backdrop-blur-sm border-white/20' : 'bg-white border-slate-200'
             }`}
+            style={{
+              willChange: "height, opacity, transform",
+              backfaceVisibility: "hidden"
+            }}
           >
             <div className="px-4 py-4 space-y-4">
               <button 
@@ -1357,38 +1377,54 @@ export default function App() {
                   <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
                 </div>
 
-                {showFolderInput && (
-                  <div className={`p-4 border-b ${
-                    isDarkActive ? 'bg-slate-900/80 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-950 shadow-inner'
-                  }`}>
-                    <form onSubmit={handleFolderCreate} className="flex gap-2">
-                       <input 
-                        name="folderName"
-                        type="text"
-                        required
-                        placeholder="Folder Name"
-                        className={`flex-1 px-3 py-1.5 border rounded-lg text-sm outline-none transition-colors duration-150 font-black ${
-                          isDarkActive 
-                            ? 'bg-slate-950 border-white/30 text-white placeholder-white/50 focus:border-red-500' 
-                            : 'bg-white border-slate-400 text-black placeholder-slate-500 focus:ring-2 focus:ring-red-500/20 focus:border-red-500'
-                        }`}
-                        autoFocus
-                        disabled={isCreatingFolder}
-                       />
-                       <button type="submit" disabled={isCreatingFolder} className="px-4 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold disabled:opacity-50 cursor-pointer">Create</button>
-                       <button 
-                         type="button" 
-                         disabled={isCreatingFolder} 
-                         onClick={() => setShowFolderInput(false)} 
-                         className={`px-4 py-1.5 rounded-lg text-xs font-bold disabled:opacity-50 cursor-pointer ${
-                           isDarkActive ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-                         }`}
-                       >
-                         Cancel
-                       </button>
-                    </form>
-                  </div>
-                )}
+                <AnimatePresence>
+                  {showFolderInput && (
+                    <motion.div 
+                      {...animProps({
+                        initial: { opacity: 0, height: 0 },
+                        animate: { opacity: 1, height: 'auto' },
+                        exit: { opacity: 0, height: 0 },
+                        transition: { duration: 0.16, ease: [0.16, 1, 0.3, 1] }
+                      })}
+                      className={`overflow-hidden border-b transform-gpu ${
+                        isDarkActive ? 'bg-slate-900/80 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-950 shadow-inner'
+                      }`}
+                      style={{
+                        willChange: "height, opacity",
+                        backfaceVisibility: "hidden"
+                      }}
+                    >
+                      <div className="p-4">
+                        <form onSubmit={handleFolderCreate} className="flex gap-2">
+                           <input 
+                            name="folderName"
+                            type="text"
+                            required
+                            placeholder="Folder Name"
+                            className={`flex-1 px-3 py-1.5 border rounded-lg text-sm outline-none transition-colors duration-150 font-black ${
+                              isDarkActive 
+                                ? 'bg-slate-950 border-white/30 text-white placeholder-white/50 focus:border-red-500' 
+                                : 'bg-white border-slate-400 text-black placeholder-slate-500 focus:ring-2 focus:ring-red-500/20 focus:border-red-500'
+                            }`}
+                            autoFocus
+                            disabled={isCreatingFolder}
+                           />
+                           <button type="submit" disabled={isCreatingFolder} className="px-4 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold disabled:opacity-50 cursor-pointer">Create</button>
+                           <button 
+                             type="button" 
+                             disabled={isCreatingFolder} 
+                             onClick={() => setShowFolderInput(false)} 
+                             className={`px-4 py-1.5 rounded-lg text-xs font-bold disabled:opacity-50 cursor-pointer ${
+                               isDarkActive ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                             }`}
+                           >
+                             Cancel
+                           </button>
+                        </form>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* File List Header */}
                 <div className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 px-6 py-2 text-[10px] font-bold uppercase tracking-widest border-b ${isDarkActive ? 'bg-white/10 text-white border-white/10 shadow-[0_2px_10px_rgba(0,0,0,0.1)]' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
@@ -1399,12 +1435,21 @@ export default function App() {
                 </div>
 
                 {/* List Content */}
-                <div className={`divide-y ${isDarkActive ? 'divide-white/10' : 'divide-slate-50'}`}>
+                <motion.div 
+                  key={currentFolderId || 'root'}
+                  initial={{ opacity: 0, y: 3 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                  className={`divide-y transform-gpu ${isDarkActive ? 'divide-white/10' : 'divide-slate-50'}`}
+                  style={{ willChange: "transform, opacity" }}
+                >
                   {filteredFiles.map((file, index) => (
-                    <div 
+                    <motion.div 
                       key={file.id}
-                      className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 items-center px-6 py-3.5 transition-colors group cursor-pointer ${isDarkActive ? 'hover:bg-white/10' : 'hover:bg-slate-50'}`}
+                      whileTap={{ scale: 0.985 }}
+                      className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 items-center px-6 py-3.5 transition-colors group cursor-pointer transform-gpu ${isDarkActive ? 'hover:bg-white/10' : 'hover:bg-slate-50'}`}
                       onClick={() => file.type === 'folder' ? enterFolder(file) : window.location.href = `/download/${file.id}`}
+                      style={{ willChange: "transform" }}
                     >
                        <div className="flex items-center gap-3 min-w-0 pr-2 grow">
                           {isLoggedIn && !searchTerm && (
@@ -1514,7 +1559,7 @@ export default function App() {
                             )}
                          </div>
                        )}
-                    </div>
+                    </motion.div>
                   ))}
                   {filteredFiles.length === 0 && !uploading && (
                     <div className="py-20 flex flex-col items-center justify-center text-slate-300 space-y-3">
@@ -1547,7 +1592,7 @@ export default function App() {
                        <p className="text-[10px] font-black uppercase text-red-600 tracking-widest animate-pulse drop-shadow-sm">Streaming to cloud node...</p>
                     </div>
                   )}
-                </div>
+                </motion.div>
               </div>
             </motion.div>
           ) : (
