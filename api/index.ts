@@ -102,9 +102,18 @@ const saveSettings = () => {
   fs.renameSync(tmpPath, settingsFilePath);
 };
 
-const ensurePrepopulatedKaeblox = () => {
+const ensurePrepopulatedResources = () => {
   const KAEBLOX_FOLDER_ID = 'c51a3e51f82873d1';
-  
+  const KAEDEX_FOLDER_ID = 'bbc485cc42f83b2f';
+
+  // Clean up any old erroneously duplicated Kaedex files that were stored inside Kaeblox folder
+  Object.keys(filesMetadata).forEach(id => {
+    const f = filesMetadata[id];
+    if (f && f.parentId === KAEBLOX_FOLDER_ID && f.originalName.toLowerCase().includes('kaedex')) {
+      delete filesMetadata[id];
+    }
+  });
+
   // 1. Ensure Kaeblox folder exists
   if (!filesMetadata[KAEBLOX_FOLDER_ID]) {
     filesMetadata[KAEBLOX_FOLDER_ID] = {
@@ -121,24 +130,45 @@ const ensurePrepopulatedKaeblox = () => {
     // If folder exists, make sure name and release tag are correct
     filesMetadata[KAEBLOX_FOLDER_ID].originalName = 'Kaeblox ( Android 11-17+ )';
     filesMetadata[KAEBLOX_FOLDER_ID].githubReleaseTag = 'Kaeblox(ForA12+)';
+    filesMetadata[KAEBLOX_FOLDER_ID].type = 'folder';
+    filesMetadata[KAEBLOX_FOLDER_ID].parentId = null;
   }
 
-  // 2. Ensure the 6 APKs exist inside the Kaeblox folder of this release
-  const apks = [
-    { name: 'Kaeblox_1.apk', id: '333bf9a79acaabd8', assetId: 435295213, order: 1 },
-    { name: 'Kaeblox_2.apk', id: '265bd61f51043795', assetId: 435295625, order: 2 },
-    { name: 'Kaeblox_3.apk', id: '7a5a47fddaec128e', assetId: 435295998, order: 3 },
-    { name: 'Kaeblox_4.apk', id: '8e59efeb2570fe2d', assetId: 435296384, order: 4 },
-    { name: 'Kaeblox_5.apk', id: 'afe8800e2d890f8b', assetId: 435296661, order: 5 },
-    { name: 'Kaeblox_6.apk', id: '0d69c32ef99e9916', assetId: 435296935, order: 6 }
+  // 2. Ensure Kaedex folder exists
+  if (!filesMetadata[KAEDEX_FOLDER_ID]) {
+    filesMetadata[KAEDEX_FOLDER_ID] = {
+      id: KAEDEX_FOLDER_ID,
+      originalName: 'Kaedex ( Android 11-17+ ) [ Non Key ]',
+      size: 0,
+      mimeType: 'application/x-directory',
+      uploadDate: 1780972012230,
+      type: 'folder',
+      parentId: null,
+      githubReleaseTag: 'Kaedex'
+    };
+  } else {
+    filesMetadata[KAEDEX_FOLDER_ID].originalName = 'Kaedex ( Android 11-17+ ) [ Non Key ]';
+    filesMetadata[KAEDEX_FOLDER_ID].githubReleaseTag = 'Kaedex';
+    filesMetadata[KAEDEX_FOLDER_ID].type = 'folder';
+    filesMetadata[KAEDEX_FOLDER_ID].parentId = null;
+  }
+
+  // 3. Ensure the 6 APKs exist inside the Kaeblox folder
+  const kaebloxApks = [
+    { name: 'Kaeblox_1.apk', id: '333bf9a79acaabd8', assetId: 442282636, order: 1 },
+    { name: 'Kaeblox_2.apk', id: '265bd61f51043795', assetId: 442282823, order: 2 },
+    { name: 'Kaeblox_3.apk', id: '7a5a47fddaec128e', assetId: 442283208, order: 3 },
+    { name: 'Kaeblox_4.apk', id: '8e59efeb2570fe2d', assetId: 442283710, order: 4 },
+    { name: 'Kaeblox_5.apk', id: 'afe8800e2d890f8b', assetId: 442284104, order: 5 },
+    { name: 'Kaeblox_6.apk', id: '0d69c32ef99e9916', assetId: 442284542, order: 6 }
   ];
 
-  apks.forEach((apk, index) => {
+  kaebloxApks.forEach((apk, index) => {
     if (!filesMetadata[apk.id]) {
       filesMetadata[apk.id] = {
         id: apk.id,
         originalName: apk.name,
-        size: 95131813,
+        size: 118039181,
         mimeType: 'application/vnd.android.package-archive',
         uploadDate: 1779110521923 + index,
         type: 'file',
@@ -153,6 +183,43 @@ const ensurePrepopulatedKaeblox = () => {
       filesMetadata[apk.id].parentId = KAEBLOX_FOLDER_ID;
       filesMetadata[apk.id].githubDownloadUrl = `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaeblox%28ForA12%2B%29/${apk.name}`;
       filesMetadata[apk.id].order = apk.order;
+      filesMetadata[apk.id].size = 118039181;
+      filesMetadata[apk.id].githubAssetId = apk.assetId;
+    }
+  });
+
+  // 4. Ensure the 6 APKs exist inside the Kaedex folder
+  const kaedexApks = [
+    { name: 'Kaedex_1.apk', id: '420fc42814db62cf', assetId: 442316865, order: 1 },
+    { name: 'Kaedex_2.apk', id: 'd36830df16d6e7ae', assetId: 442317733, order: 2 },
+    { name: 'Kaedex_3.apk', id: '7a66b06cc1a91885', assetId: 442318468, order: 3 },
+    { name: 'Kaedex_4.apk', id: 'cc64aa222d69740a', assetId: 442318771, order: 4 },
+    { name: 'Kaedex_5.apk', id: 'f6980f0ddc0fc10f', assetId: 442319153, order: 5 },
+    { name: 'Kaedex_6.apk', id: '72bb15566b7d937c', assetId: 442319514, order: 6 }
+  ];
+
+  kaedexApks.forEach((apk, index) => {
+    if (!filesMetadata[apk.id]) {
+      filesMetadata[apk.id] = {
+        id: apk.id,
+        originalName: apk.name,
+        size: 102878407,
+        mimeType: 'application/vnd.android.package-archive',
+        uploadDate: 1780972168586 + index,
+        type: 'file',
+        parentId: KAEDEX_FOLDER_ID,
+        githubAssetId: apk.assetId,
+        githubDownloadUrl: `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaedex/${apk.name}`,
+        order: apk.order
+      };
+    } else {
+      // Ensure the download urls, parentId, and naming are completely aligned
+      filesMetadata[apk.id].originalName = apk.name;
+      filesMetadata[apk.id].parentId = KAEDEX_FOLDER_ID;
+      filesMetadata[apk.id].githubDownloadUrl = `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaedex/${apk.name}`;
+      filesMetadata[apk.id].order = apk.order;
+      filesMetadata[apk.id].size = 102878407;
+      filesMetadata[apk.id].githubAssetId = apk.assetId;
     }
   });
 
@@ -160,6 +227,34 @@ const ensurePrepopulatedKaeblox = () => {
 };
 
 const loadData = () => {
+  // Restore metadata from bundled fallback if active path doesn't exist
+  if (!fs.existsSync(metadataFilePath)) {
+    const backupPath = path.join(process.cwd(), '.data', 'metadata.json_db');
+    if (fs.existsSync(backupPath)) {
+      try {
+        console.log('Restoring metadata database from bundled backup...');
+        fs.mkdirSync(path.dirname(metadataFilePath), { recursive: true });
+        fs.copyFileSync(backupPath, metadataFilePath);
+      } catch (err) {
+        console.error('Failed to copy metadata backup:', err);
+      }
+    }
+  }
+
+  // Restore settings from bundled fallback if active path doesn't exist
+  if (!fs.existsSync(settingsFilePath)) {
+    const backupPath = path.join(process.cwd(), '.data', 'settings.json_db');
+    if (fs.existsSync(backupPath)) {
+      try {
+        console.log('Restoring settings database from bundled backup...');
+        fs.mkdirSync(path.dirname(settingsFilePath), { recursive: true });
+        fs.copyFileSync(backupPath, settingsFilePath);
+      } catch (err) {
+        console.error('Failed to copy settings backup:', err);
+      }
+    }
+  }
+
   if (fs.existsSync(metadataFilePath)) {
     try {
       const data = JSON.parse(fs.readFileSync(metadataFilePath, 'utf-8'));
@@ -206,8 +301,8 @@ const loadData = () => {
     }
   }
 
-  // Ensure Kaeblox folder & files are pre-populated so they are NEVER missing or empty
-  ensurePrepopulatedKaeblox();
+  // Ensure Kaeblox & Kaedex folders & files are pre-populated so they are NEVER missing or empty
+  ensurePrepopulatedResources();
 
   if (fs.existsSync(settingsFilePath)) {
     try {
@@ -483,16 +578,39 @@ async function autoSyncGithub(force = false) {
       }
 
       // Find or create the directory folder for this release
-      let folderId = Object.keys(filesMetadata).find(
-          id => filesMetadata[id].type === 'folder' && 
-                (filesMetadata[id].githubReleaseTag === tag_name ||
-                 filesMetadata[id].originalName === displayFolderName || 
-                 filesMetadata[id].originalName === tag_name ||
-                 filesMetadata[id].originalName === 'Kaeblox(A11-17+)' ||
-                 filesMetadata[id].originalName === 'Kaeblox 2.720.716' ||
-                 filesMetadata[id].originalName.toLowerCase().includes('kaedex') ||
-                 filesMetadata[id].originalName.toLowerCase().includes('kaeblox'))
-      );
+      const isCurrentKaeblox = !!(tag_name?.toLowerCase().includes('kaeblox') || displayFolderName?.toLowerCase().includes('kaeblox'));
+      const isCurrentKaedex = !!(tag_name?.toLowerCase().includes('kaedex') || displayFolderName?.toLowerCase().includes('kaedex'));
+
+      let folderId = Object.keys(filesMetadata).find(id => {
+          const f = filesMetadata[id];
+          if (f.type !== 'folder') return false;
+
+          // If the folder has the exact same tag name, it's definitely a match
+          if (f.githubReleaseTag === tag_name) return true;
+
+          // If the current release we are processing is Kaeblox
+          if (isCurrentKaeblox) {
+              const fNameLower = f.originalName.toLowerCase();
+              const fTagLower = f.githubReleaseTag?.toLowerCase() || '';
+              if (fNameLower.includes('kaeblox') || fTagLower.includes('kaeblox') || fNameLower === 'kaeblox(a11-17+)' || fNameLower === 'kaeblox 2.720.716') {
+                  return true;
+              }
+          }
+
+          // If the current release we are processing is Kaedex
+          if (isCurrentKaedex) {
+              const fNameLower = f.originalName.toLowerCase();
+              const fTagLower = f.githubReleaseTag?.toLowerCase() || '';
+              if (fNameLower.includes('kaedex') || fTagLower.includes('kaedex')) {
+                  return true;
+              }
+          }
+
+          // Direct generic match
+          if (f.originalName === displayFolderName || f.originalName === tag_name) return true;
+
+          return false;
+      });
 
       if (!folderId) {
           folderId = crypto.randomBytes(8).toString('hex');
