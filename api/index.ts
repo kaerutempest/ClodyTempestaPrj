@@ -194,6 +194,11 @@ const loadData = () => {
           if (folder.githubReleaseTag === 'Kaeblox(ForA12+)' || folder.originalName === 'Kaeblox 2.720.716' || folder.originalName === 'Kaeblox' || folder.originalName === 'Kaeblox(A11-17+)') {
             folder.originalName = 'Kaeblox ( Android 11-17+ )';
           }
+
+          // Force rename Kaedex version variations to 'Kaedex ( Android 11-17+ ) [ Non Key ]' as requested by user
+          if (folder.originalName === 'Kaedex' || folder.originalName.toLowerCase().includes('kaedex') || folder.githubReleaseTag?.toLowerCase().includes('kaedex')) {
+            folder.originalName = 'Kaedex ( Android 11-17+ ) [ Non Key ]';
+          }
         }
       });
     } catch (e) {
@@ -472,6 +477,11 @@ async function autoSyncGithub(force = false) {
           displayFolderName = 'Kaeblox ( Android 11-17+ )';
       }
 
+      // Force format folder name for Kaedex as demanded by user
+      if (tag_name?.toLowerCase().includes('kaedex') || displayFolderName?.toLowerCase().includes('kaedex') || displayFolderName === 'Kaedex') {
+          displayFolderName = 'Kaedex ( Android 11-17+ ) [ Non Key ]';
+      }
+
       // Find or create the directory folder for this release
       let folderId = Object.keys(filesMetadata).find(
           id => filesMetadata[id].type === 'folder' && 
@@ -479,7 +489,9 @@ async function autoSyncGithub(force = false) {
                  filesMetadata[id].originalName === displayFolderName || 
                  filesMetadata[id].originalName === tag_name ||
                  filesMetadata[id].originalName === 'Kaeblox(A11-17+)' ||
-                 filesMetadata[id].originalName === 'Kaeblox 2.720.716')
+                 filesMetadata[id].originalName === 'Kaeblox 2.720.716' ||
+                 filesMetadata[id].originalName.toLowerCase().includes('kaedex') ||
+                 filesMetadata[id].originalName.toLowerCase().includes('kaeblox'))
       );
 
       if (!folderId) {
@@ -497,6 +509,9 @@ async function autoSyncGithub(force = false) {
       } else {
           // Keep name up to date but preserve rename if done via admin manual
           if (tag_name === 'Kaeblox(ForA12+)' || displayFolderName === 'Kaeblox ( Android 11-17+ )' || displayFolderName === 'Kaeblox(A11-17+)') {
+              filesMetadata[folderId].originalName = displayFolderName;
+          }
+          if (tag_name?.toLowerCase().includes('kaedex') || displayFolderName === 'Kaedex ( Android 11-17+ ) [ Non Key ]') {
               filesMetadata[folderId].originalName = displayFolderName;
           }
           if (!filesMetadata[folderId].githubReleaseTag) {
@@ -690,19 +705,33 @@ app.get('/api/files', async (req, res) => {
   const list = Object.values(filesMetadata)
     .filter(f => f.parentId === pid)
     .sort((a, b) => {
+      // 1. Explicit manually saved arrangement order
       if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
       if (a.order !== undefined) return -1;
       if (b.order !== undefined) return 1;
+
+      // 2. Folders always go above files
       if (a.type === 'folder' && b.type !== 'folder') return -1;
       if (a.type !== 'folder' && b.type === 'folder') return 1;
 
-      // Secondary sorting: If names contain 'kaeblox', sort alphabetically ascending (1 to 6)
-      const aName = a.originalName.toLowerCase();
-      const bName = b.originalName.toLowerCase();
-      if (aName.includes('kaeblox') && bName.includes('kaeblox')) {
+      // 3. Folder sorting: Keep "Kaeblox" folder at the very top of all folders, then sort others using natural sort
+      if (a.type === 'folder' && b.type === 'folder') {
+        const aIsKaeblox = a.originalName.toLowerCase().includes('kaeblox');
+        const bIsKaeblox = b.originalName.toLowerCase().includes('kaeblox');
+        if (aIsKaeblox && !bIsKaeblox) return -1;
+        if (!aIsKaeblox && bIsKaeblox) return 1;
+
         return a.originalName.localeCompare(b.originalName, undefined, { numeric: true, sensitivity: 'base' });
       }
 
+      // 4. File (non-folder) sorting: Sort neatly and sequentially using natural ascending sort
+      // This handles current files (like _1.apk, _2.apk) and any future files perfectly
+      const nameCompare = a.originalName.localeCompare(b.originalName, undefined, { numeric: true, sensitivity: 'base' });
+      if (nameCompare !== 0) {
+        return nameCompare;
+      }
+
+      // 5. Fallback to newest files first in case properties/names are identical
       return b.uploadDate - a.uploadDate;
     });
   res.json(list);
