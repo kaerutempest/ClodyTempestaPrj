@@ -31,7 +31,8 @@ import {
   ArrowLeft,
   Github,
   Moon,
-  Sun
+  Sun,
+  Smartphone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRIS_BASE64 } from './qrisData';
@@ -1400,9 +1401,15 @@ export default function App() {
                               </button>
                             </div>
                           )}
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105 ${file.type === 'folder' ? (isDarkActive ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-amber-50 text-amber-500') : (isDarkActive ? 'bg-red-400/20 text-red-300 border border-red-400/30' : 'bg-red-50 text-red-500')}`}>
-                             {file.type === 'folder' ? <FolderOpen className="w-4 h-4" /> : <File className="w-4 h-4" />}
-                          </div>
+                          {file.type === 'folder' && file.originalName.toLowerCase().includes('kaeblox') ? (
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-md border transition-all duration-300 group-hover:scale-110 ${isDarkActive ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-500/10 text-red-600 border-red-500/20'}`}>
+                              <FolderOpen className="w-4 h-4" />
+                            </div>
+                          ) : (
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105 ${file.type === 'folder' ? (isDarkActive ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-amber-50 text-amber-500') : (isDarkActive ? 'bg-red-400/20 text-red-300 border border-red-400/30' : 'bg-red-50 text-red-500')}`}>
+                               {file.type === 'folder' ? <FolderOpen className="w-4 h-4" /> : <File className="w-4 h-4" />}
+                            </div>
+                          )}
                           {renamingFileId === file.id ? (
                             <form 
                               onSubmit={(e) => handleRename(e, file.id)} 
@@ -1423,15 +1430,21 @@ export default function App() {
                           ) : (
                             <div className="flex flex-col min-w-0 pr-2">
                               <span style={{ wordBreak: 'break-word' }} className={`text-sm md:text-base font-bold transition-colors ${isDarkActive ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] group-hover:text-red-300' : 'text-slate-800 group-hover:text-red-600'}`}>{file.originalName}</span>
-                              <div className={`flex md:hidden text-[10px] gap-2 mt-0.5 ${isDarkActive ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>
-                                {file.type !== 'folder' && <span>{formatSize(file.size)}</span>}
-                                <span>{new Date(file.uploadDate).toLocaleDateString()}</span>
+                              <div className={`flex text-[10px] gap-2 mt-0.5 ${isDarkActive ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>
+                                {file.type === 'folder' ? (
+                                  <span className="font-bold text-red-500/90 dark:text-red-400/90 tracking-wider uppercase text-[9px]">Delta lite</span>
+                                ) : (
+                                  <div className="flex md:hidden gap-2">
+                                    <span>{formatSize(file.size)}</span>
+                                    <span>{new Date(file.uploadDate).toLocaleDateString()}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}
                        </div>
                        <span className={`hidden md:block text-center text-xs font-medium ${isDarkActive ? 'text-white/80 drop-shadow-sm' : 'text-slate-500'}`}>{file.type === 'folder' ? '-' : formatSize(file.size)}</span>
-                       <span className={`hidden md:block text-right text-xs font-medium ${isDarkActive ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>{new Date(file.uploadDate).toLocaleDateString()}</span>
+                       <span className={`hidden md:block text-right text-xs font-medium ${isDarkActive ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>{file.type === 'folder' ? '-' : new Date(file.uploadDate).toLocaleDateString()}</span>
                        {renamingFileId !== file.id && (
                          <div className="flex justify-end gap-1.5 relative shrink-0 items-center">
                             {file.type !== 'folder' && (

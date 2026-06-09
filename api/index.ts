@@ -109,7 +109,7 @@ const ensurePrepopulatedKaeblox = () => {
   if (!filesMetadata[KAEBLOX_FOLDER_ID]) {
     filesMetadata[KAEBLOX_FOLDER_ID] = {
       id: KAEBLOX_FOLDER_ID,
-      originalName: 'Kaeblox(A11-17+)',
+      originalName: 'Kaeblox ( Android 11-17+ )',
       size: 0,
       mimeType: 'application/x-directory',
       uploadDate: 1779110521922,
@@ -119,7 +119,7 @@ const ensurePrepopulatedKaeblox = () => {
     };
   } else {
     // If folder exists, make sure name and release tag are correct
-    filesMetadata[KAEBLOX_FOLDER_ID].originalName = 'Kaeblox(A11-17+)';
+    filesMetadata[KAEBLOX_FOLDER_ID].originalName = 'Kaeblox ( Android 11-17+ )';
     filesMetadata[KAEBLOX_FOLDER_ID].githubReleaseTag = 'Kaeblox(ForA12+)';
   }
 
@@ -190,9 +190,9 @@ const loadData = () => {
             }
           }
 
-          // Force rename Kaeblox version variations to 'Kaeblox(A11-17+)' as requested by user
-          if (folder.githubReleaseTag === 'Kaeblox(ForA12+)' || folder.originalName === 'Kaeblox 2.720.716' || folder.originalName === 'Kaeblox') {
-            folder.originalName = 'Kaeblox(A11-17+)';
+          // Force rename Kaeblox version variations to 'Kaeblox ( Android 11-17+ )' as requested by user
+          if (folder.githubReleaseTag === 'Kaeblox(ForA12+)' || folder.originalName === 'Kaeblox 2.720.716' || folder.originalName === 'Kaeblox' || folder.originalName === 'Kaeblox(A11-17+)') {
+            folder.originalName = 'Kaeblox ( Android 11-17+ )';
           }
         }
       });
@@ -468,8 +468,8 @@ async function autoSyncGithub(force = false) {
       let displayFolderName = releaseName || tag_name;
 
       // Force format folder name for Kaeblox as demanded by user to prevent "empty folders"
-      if (tag_name === 'Kaeblox(ForA12+)' || displayFolderName === 'Kaeblox') {
-          displayFolderName = 'Kaeblox(A11-17+)';
+      if (tag_name === 'Kaeblox(ForA12+)' || displayFolderName === 'Kaeblox' || displayFolderName === 'Kaeblox(A11-17+)') {
+          displayFolderName = 'Kaeblox ( Android 11-17+ )';
       }
 
       // Find or create the directory folder for this release
@@ -478,6 +478,7 @@ async function autoSyncGithub(force = false) {
                 (filesMetadata[id].githubReleaseTag === tag_name ||
                  filesMetadata[id].originalName === displayFolderName || 
                  filesMetadata[id].originalName === tag_name ||
+                 filesMetadata[id].originalName === 'Kaeblox(A11-17+)' ||
                  filesMetadata[id].originalName === 'Kaeblox 2.720.716')
       );
 
@@ -495,7 +496,7 @@ async function autoSyncGithub(force = false) {
           };
       } else {
           // Keep name up to date but preserve rename if done via admin manual
-          if (tag_name === 'Kaeblox(ForA12+)' || displayFolderName === 'Kaeblox(A11-17+)') {
+          if (tag_name === 'Kaeblox(ForA12+)' || displayFolderName === 'Kaeblox ( Android 11-17+ )' || displayFolderName === 'Kaeblox(A11-17+)') {
               filesMetadata[folderId].originalName = displayFolderName;
           }
           if (!filesMetadata[folderId].githubReleaseTag) {
