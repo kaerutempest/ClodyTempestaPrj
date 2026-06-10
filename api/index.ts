@@ -86,6 +86,7 @@ interface FileMetadata {
   githubDownloadUrl?: string;
   order?: number;
   githubReleaseTag?: string;
+  downloadCount?: number;
 }
 
 let filesMetadata: Record<string, FileMetadata> = {};
@@ -458,7 +459,8 @@ app.post('/api/upload', (req, res, next) => {
     const metadata: FileMetadata = {
       id, originalName: req.file.originalname, size: req.file.size,
       mimeType: req.file.mimetype, uploadDate: Date.now(),
-      type: 'file', parentId: parentId || null
+      type: 'file', parentId: parentId || null,
+      downloadCount: 0
     };
 
     // Attempt GitHub upload
@@ -658,7 +660,8 @@ async function autoSyncGithub(force = false) {
                   type: 'file',
                   parentId: folderId,
                   githubAssetId: asset.id,
-                  githubDownloadUrl: asset.browser_download_url
+                  githubDownloadUrl: asset.browser_download_url,
+                  downloadCount: 0
               };
               totalAdded++;
           } else {
@@ -921,6 +924,11 @@ app.get('/download/:id', (req, res) => {
   const id = req.params.id;
   const metadata = filesMetadata[id];
   if (!metadata) return res.status(404).send('File not found');
+  
+  if (metadata.type !== 'folder') {
+    metadata.downloadCount = (metadata.downloadCount || 0) + 1;
+    saveMetadata();
+  }
   
   if (metadata.githubDownloadUrl) {
     return streamFromUrl(metadata.githubDownloadUrl, res, metadata.originalName);

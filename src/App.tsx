@@ -46,6 +46,7 @@ interface FileMetadata {
   type: 'file' | 'folder';
   parentId: string | null;
   githubReleaseTag?: string;
+  downloadCount?: number;
 }
 
 export default function App() {
@@ -1135,7 +1136,7 @@ export default function App() {
                   animate: { opacity: 1, y: 0 },
                   exit: { opacity: 0, y: -10 }
                 })}
-                className="max-w-sm mx-auto pt-20"
+                className="max-w-sm mx-auto pt-6 sm:pt-20 landscape:pt-4"
               >
                 <div className={`p-8 rounded-2xl border shadow-lg transition-colors duration-150 ${
                   isDarkActive ? 'bg-slate-950 border-white/10 text-white shadow-2xl' : 'bg-white border-slate-200 text-slate-800'
@@ -1505,10 +1506,16 @@ export default function App() {
                                     {file.originalName.toLowerCase().includes('kaedex') ? 'Codex lite' : 'Delta lite'}
                                   </span>
                                 ) : (
-                                  <div className="flex md:hidden gap-2">
-                                    <span>{formatSize(file.size)}</span>
-                                    <span>{new Date(file.uploadDate).toLocaleDateString()}</span>
-                                  </div>
+                                  <>
+                                    <div className="flex md:hidden gap-2 items-center">
+                                      <span>{formatSize(file.size)}</span>
+                                      <span>•</span>
+                                      <span>{new Date(file.uploadDate).toLocaleDateString()}</span>
+                                    </div>
+                                    <div className="flex items-center bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-extrabold px-1.5 py-0.5 rounded-md text-[9px] uppercase tracking-wider">
+                                      <span>Latest Version</span>
+                                    </div>
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -1609,11 +1616,11 @@ export default function App() {
                 isDarkActive ? 'bg-slate-950/40 backdrop-blur-md border border-white/10 text-white shadow-xl' : 'bg-white border-slate-200'
               }`}>
                 <div className="h-2 bg-red-600" />
-                <div className="p-8 md:p-12 text-center space-y-8">
-                  <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto transition-colors border shadow-inner ${
+                <div className="p-6 landscape:p-4 md:p-12 text-center space-y-6 landscape:space-y-4">
+                  <div className={`w-14 h-14 md:w-20 md:h-20 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto transition-colors border shadow-inner ${
                     isDarkActive ? 'bg-white/10 border-white/20 text-white drop-shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400'
                   }`}>
-                    <File className="w-10 h-10" />
+                    <File className="w-7 h-7 md:w-10 md:h-10" />
                   </div>
                   
                   <div className="space-y-4">
@@ -1647,40 +1654,46 @@ export default function App() {
                           )}
                         </h1>
                     )}
-                    <div className={`flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-widest ${isDarkActive ? 'text-white/70' : 'text-slate-400'}`}>
+                    <div className={`flex flex-wrap items-center justify-center gap-4 text-[10px] font-black uppercase tracking-widest ${isDarkActive ? 'text-white/70' : 'text-slate-400'}`}>
                       <span>{formatSize(selectedFile?.size || 0)}</span>
                       <span className={`w-1.5 h-1.5 rounded-full ${isDarkActive ? 'bg-white/40' : 'bg-slate-200'}`} />
                       <span>Ready for Transmission</span>
+                      <span className={`w-1.5 h-1.5 rounded-full ${isDarkActive ? 'bg-white/40' : 'bg-slate-200'}`} />
+                      <span className="bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-extrabold px-1.5 py-0.5 rounded-md text-[9px] uppercase tracking-wider">
+                        Latest Version
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-4 max-w-sm mx-auto">
-                    <a 
-                      href={`/download/${selectedFile?.id}`}
-                      className="w-full py-4 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-xl shadow-red-600/30 active:scale-95 text-xs"
-                    >
-                      <Download className="w-5 h-5" />
-                      DOWNLOAD FILE
-                    </a>
-                    <button 
-                      onClick={() => selectedFile && copyLink(selectedFile.id)}
-                      className={`w-full py-4 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all border text-xs ${isDarkActive ? 'bg-white/20 border-white/30 text-white hover:bg-white/30 shadow-lg shadow-black/5' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
-                    >
-                      <Share2 className="w-4 h-4" />
-                      Copy Origin URL
-                    </button>
+                  <div className="flex flex-col gap-3 max-w-sm landscape:max-w-lg mx-auto w-full">
+                    <div className="grid grid-cols-1 landscape:grid-cols-2 gap-3">
+                      <a 
+                        href={`/download/${selectedFile?.id}`}
+                        className="w-full py-3 landscape:py-2.5 sm:py-4 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-xl shadow-red-600/30 active:scale-95 text-xs text-center"
+                      >
+                        <Download className="w-5 h-5 shrink-0" />
+                        <span>DOWNLOAD FILE</span>
+                      </a>
+                      <button 
+                        onClick={() => selectedFile && copyLink(selectedFile.id)}
+                        className={`w-full py-3 landscape:py-2.5 sm:py-4 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all border text-xs cursor-pointer ${isDarkActive ? 'bg-white/20 border-white/30 text-white hover:bg-white/30 shadow-lg shadow-black/5' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                      >
+                        <Share2 className="w-4 h-4 shrink-0" />
+                        <span>Copy Origin URL</span>
+                      </button>
+                    </div>
                     {isLoggedIn && selectedFile && (
                       <button 
                         onClick={() => deleteItem(selectedFile.id, selectedFile.originalName)}
-                        className="w-full py-3 bg-red-100 text-red-600 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all border border-red-200 hover:bg-red-200 text-xs mt-2"
+                        className="w-full py-2.5 bg-red-100 text-red-600 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all border border-red-200 hover:bg-red-200 text-xs shadow-xs"
                       >
-                        <Trash2 className="w-4 h-4" />
-                        Delete Permanently
+                        <Trash2 className="w-4 h-4 shrink-0" />
+                        <span>Delete Permanently</span>
                       </button>
                     )}
                     <button 
                       onClick={navigateToHome}
-                      className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors py-2 ${isDarkActive ? 'text-white/60 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}
+                      className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors py-2 cursor-pointer ${isDarkActive ? 'text-white/60 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}
                     >
                       Back to Matrix
                     </button>
@@ -1733,14 +1746,14 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[9999] flex items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[9999] flex justify-center p-4 overflow-y-auto w-full h-full"
           >
             <motion.div
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
               transition={{ type: "spring", duration: 0.6, bounce: 0.15 }}
-              className={`relative w-full max-w-lg rounded-3xl overflow-hidden border transition-all duration-300 shadow-[0_0_60px_-15px_rgba(239,68,68,0.4)] ${
+              className={`relative w-full max-w-lg my-auto rounded-3xl overflow-hidden border transition-all duration-300 shadow-[0_0_60px_-15px_rgba(239,68,68,0.4)] ${
                 isDarkActive 
                   ? 'bg-slate-950/80 border-white/10 text-white backdrop-blur-xl' 
                   : 'bg-slate-950/85 border-white/15 text-white backdrop-blur-xl'
@@ -1763,23 +1776,23 @@ export default function App() {
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="p-6 md:p-8 space-y-6 relative z-10">
+              <div className="p-5 md:p-8 landscape:p-4 space-y-4 md:space-y-6 landscape:space-y-3 relative z-10 animate-none">
                 {/* Warning Header Symbol */}
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 animate-pulse">
-                    <AlertCircle className="w-6 h-6" />
+                <div className="flex items-center gap-3 md:gap-3.5">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 animate-pulse shrink-0">
+                    <AlertCircle className="w-5 h-5 md:w-6 md:h-6" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400 block mb-0.5">Alert Announcement</span>
-                    <h3 className="text-xl md:text-2xl font-black uppercase tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-red-200 via-white to-red-200">
+                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.25em] text-red-400 block mb-0.5">Alert Announcement</span>
+                    <h3 className="text-lg md:text-2xl font-black uppercase tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-red-200 via-white to-red-200">
                       PENTING! BACA INI DULU!
                     </h3>
                   </div>
                 </div>
 
                 {/* Message Body */}
-                <div className="space-y-4 text-sm md:text-[15px] leading-relaxed text-slate-300">
-                  <p className="font-extrabold text-white text-base">
+                <div className="space-y-3 md:space-y-4 landscape:space-y-2 text-xs md:text-[15px] leading-relaxed text-slate-300">
+                  <p className="font-extrabold text-white text-sm md:text-base">
                     Halo para member di luar sana! 👋
                   </p>
                   <p>
@@ -1787,18 +1800,18 @@ export default function App() {
                   </p>
                   
                   {/* Highlighted Link Section (Glassmorphism with red stroke) */}
-                  <div className="p-4 md:p-5 rounded-2xl border bg-gradient-to-b from-red-500/5 to-transparent border-red-500/20 shadow-[inset_0_1px_20px_rgba(239,68,68,0.05)] text-center my-5">
-                    <p className="text-[10px] uppercase tracking-[0.2em] font-black text-red-400 mb-2">
+                  <div className="p-3 md:p-5 rounded-2xl border bg-gradient-to-b from-red-500/5 to-transparent border-red-500/20 shadow-[inset_0_1px_20px_rgba(239,68,68,0.05)] text-center my-3 landscape:my-1.5">
+                    <p className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-black text-red-400 mb-1 md:mb-2">
                       Ingat ya, website official kita CUMA SATU:
                     </p>
                     <a 
                       href="https://tempestacloudy.my.id" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2.5 text-md md:text-xl font-black text-red-400 hover:text-red-300 hover:scale-103 transition-all duration-200 hover:underline hover:underline-offset-4"
+                      className="inline-flex items-center gap-2 text-sm md:text-xl font-black text-red-400 hover:text-red-300 hover:scale-103 transition-all duration-200 hover:underline hover:underline-offset-4"
                     >
-                      <span>🌐 Tempestacloudy.my.id</span>
-                      <ExternalLink className="w-4 h-4 text-red-400 shrink-0" />
+                      <span className="text-xs md:text-lg">🌐 Tempestacloudy.my.id</span>
+                      <ExternalLink className="w-3.5 h-3.5 md:w-4 md:h-4 text-red-400 shrink-0" />
                     </a>
                   </div>
 
@@ -1806,23 +1819,23 @@ export default function App() {
                     Kami tidak bertanggung jawab kalau kamu pakai aplikasi yang bukan dari web resmi kami.
                   </p>
 
-                  <p className="text-slate-400 text-xs md:text-sm">
+                  <p className="text-slate-400 text-[10px] md:text-sm">
                     Jadi, pastikan selalu cek ulang! Tetap aman dan <span className="italic font-bold text-red-400">Always Enjoy... 😄</span>
                   </p>
                 </div>
 
                 {/* Confirm/Dismiss Buttons */}
-                <div className="pt-2">
+                <div className="pt-1.5 md:pt-2">
                   <motion.button
                     whileHover={{ scale: 1.02, y: -1 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       setShowAnnouncement(false);
                     }}
-                    className="w-full py-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-200 shadow-md shadow-red-500/20 hover:shadow-red-500/30 flex items-center justify-center gap-2.5 cursor-pointer"
+                    className="w-full py-3 md:py-4 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-200 shadow-md shadow-red-500/20 hover:shadow-red-500/30 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <span>SAYA PAHAM</span>
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
                   </motion.button>
                 </div>
               </div>
@@ -1838,14 +1851,14 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[9999] flex items-center justify-center p-4 overflow-y-auto"
+            className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[9999] flex justify-center p-4 overflow-y-auto w-full h-full"
           >
             <motion.div
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
               transition={{ type: "spring", duration: 0.6, bounce: 0.15 }}
-              className={`relative w-full max-w-md rounded-3xl overflow-hidden border transition-all duration-300 shadow-[0_0_60px_-15px_rgba(239,68,68,0.4)] ${
+              className={`relative w-full max-w-md my-auto rounded-3xl overflow-hidden border transition-all duration-300 shadow-[0_0_60px_-15px_rgba(239,68,68,0.4)] ${
                 isDarkActive 
                   ? 'bg-slate-950/80 border-white/10 text-white backdrop-blur-xl' 
                   : 'bg-slate-900 border border-white/10 text-white shadow-lg'
@@ -1863,31 +1876,31 @@ export default function App() {
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="p-6 md:p-8 space-y-5 text-center relative z-10">
+              <div className="p-5 md:p-8 landscape:p-4 space-y-4 md:space-y-5 landscape:space-y-2.5 text-center relative z-10 animate-none">
                 {/* Header Symbol */}
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-505 font-bold shrink-0">
-                    <Heart className="w-6 h-6 animate-pulse text-red-500 fill-red-500" />
+                <div className="flex flex-col items-center gap-1.5 md:gap-2">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-505 font-bold shrink-0">
+                    <Heart className="w-5 h-5 md:w-6 md:h-6 animate-pulse text-red-500 fill-red-500" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.25em] text-red-400 block mb-0.5">SUPPORT...</span>
-                    <h3 className="text-xl font-black uppercase tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-red-200 via-white to-red-200">
+                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.25em] text-red-400 block mb-0.5">SUPPORT...</span>
+                    <h3 className="text-lg md:text-xl font-black uppercase tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-red-200 via-white to-red-200">
                       Traktir Kopi...
                     </h3>
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-300 max-w-sm mx-auto font-bold leading-relaxed">
+                <p className="text-[11px] md:text-xs text-slate-300 max-w-sm mx-auto font-bold leading-relaxed">
                   Suport Admin biar makin semangat buat update... <br />
                   Thank you, Hooman! 🐱❤️
                 </p>
 
                 {/* QRIS Image Frame */}
-                <div className="bg-white p-1 rounded-2xl max-w-[320px] sm:max-w-[350px] mx-auto shadow-inner border border-white/10 flex flex-col items-center justify-center relative overflow-hidden">
+                <div className="bg-white p-1 rounded-2xl max-w-[280px] sm:max-w-[320px] md:max-w-[350px] landscape:max-w-[180px] mx-auto shadow-inner border border-white/10 flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300">
                   <img 
                     src={QRIS_BASE64} 
                     alt="Donate QRIS" 
-                    className="w-full h-auto rounded-xl select-none"
+                    className="w-full h-auto max-h-[35vh] landscape:max-h-[140px] rounded-xl select-none object-contain"
                   />
                 </div>
 
@@ -1896,7 +1909,7 @@ export default function App() {
                     whileHover={{ scale: 1.02, y: -1 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setShowQrisModal(false)}
-                    className="w-full py-3.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-200 shadow-md shadow-red-500/20 hover:shadow-red-500/30 flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-3 md:py-3.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-200 shadow-md shadow-red-500/20 hover:shadow-red-500/30 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <span>SAYA PAHAM & TUTUP</span>
                   </motion.button>
