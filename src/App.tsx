@@ -1512,8 +1512,8 @@ export default function App() {
                                       <span>•</span>
                                       <span>{new Date(file.uploadDate).toLocaleDateString()}</span>
                                     </div>
-                                    <div className="flex items-center bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-extrabold px-1.5 py-0.5 rounded-md text-[9px] uppercase tracking-wider">
-                                      <span>Latest Version</span>
+                                    <div className="flex items-center bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-500 dark:text-emerald-300 border border-emerald-500/35 dark:border-emerald-400/30 font-extrabold px-1.5 py-0.5 rounded-md text-[9px] uppercase tracking-wider shrink-0 shadow-sm shadow-emerald-500/5">
+                                      <span>Latest</span>
                                     </div>
                                   </>
                                 )}
@@ -1616,7 +1616,7 @@ export default function App() {
                 isDarkActive ? 'bg-slate-950/40 backdrop-blur-md border border-white/10 text-white shadow-xl' : 'bg-white border-slate-200'
               }`}>
                 <div className="h-2 bg-red-600" />
-                <div className="p-6 landscape:p-4 md:p-12 text-center space-y-6 landscape:space-y-4">
+                <div className="p-8 landscape:p-4.5 md:p-12 text-center space-y-8 landscape:space-y-4.5">
                   <div className={`w-14 h-14 md:w-20 md:h-20 rounded-xl md:rounded-2xl flex items-center justify-center mx-auto transition-colors border shadow-inner ${
                     isDarkActive ? 'bg-white/10 border-white/20 text-white drop-shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400'
                   }`}>
@@ -1654,18 +1654,18 @@ export default function App() {
                           )}
                         </h1>
                     )}
-                    <div className={`flex flex-wrap items-center justify-center gap-4 text-[10px] font-black uppercase tracking-widest ${isDarkActive ? 'text-white/70' : 'text-slate-400'}`}>
+                    <div className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] font-black uppercase tracking-widest ${isDarkActive ? 'text-white/70' : 'text-slate-400'}`}>
                       <span>{formatSize(selectedFile?.size || 0)}</span>
                       <span className={`w-1.5 h-1.5 rounded-full ${isDarkActive ? 'bg-white/40' : 'bg-slate-200'}`} />
                       <span>Ready for Transmission</span>
                       <span className={`w-1.5 h-1.5 rounded-full ${isDarkActive ? 'bg-white/40' : 'bg-slate-200'}`} />
-                      <span className="bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-extrabold px-1.5 py-0.5 rounded-md text-[9px] uppercase tracking-wider">
-                        Latest Version
+                      <span className="bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-500 dark:text-emerald-300 border border-emerald-500/35 dark:border-emerald-400/30 font-extrabold px-2 py-0.5 rounded-md text-[9px] uppercase tracking-wider shrink-0 shadow-sm shadow-emerald-500/5">
+                        Latest
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-3 max-w-sm landscape:max-w-lg mx-auto w-full">
+                  <div className="flex flex-col gap-3.5 max-w-sm landscape:max-w-lg mx-auto w-full pt-4 landscape:pt-2">
                     <div className="grid grid-cols-1 landscape:grid-cols-2 gap-3">
                       <a 
                         href={`/download/${selectedFile?.id}`}
