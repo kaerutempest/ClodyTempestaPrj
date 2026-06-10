@@ -1500,7 +1500,7 @@ export default function App() {
                           ) : (
                             <div className="flex flex-col min-w-0 pr-2">
                               <span style={{ wordBreak: 'break-word' }} className={`text-sm md:text-base font-bold transition-colors ${isDarkActive ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] group-hover:text-red-300' : 'text-slate-800 group-hover:text-red-600'}`}>{file.originalName}</span>
-                              <div className={`flex text-[10px] gap-2 mt-0.5 ${isDarkActive ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>
+                              <div className={`flex items-center text-[10px] gap-2 mt-0.5 ${isDarkActive ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>
                                 {file.type === 'folder' ? (
                                   <span className="font-bold text-red-500/95 dark:text-red-400/95 tracking-wider uppercase text-[9px]">
                                     {file.originalName.toLowerCase().includes('kaedex') ? 'Codex lite' : 'Delta lite'}
@@ -1508,11 +1508,11 @@ export default function App() {
                                 ) : (
                                   <>
                                     <div className="flex md:hidden gap-2 items-center">
-                                      <span>{formatSize(file.size)}</span>
-                                      <span>•</span>
-                                      <span>{new Date(file.uploadDate).toLocaleDateString()}</span>
+                                      <span className="inline-flex items-center">{formatSize(file.size)}</span>
+                                      <span className="text-slate-300 dark:text-white/20">•</span>
+                                      <span className="inline-flex items-center">{new Date(file.uploadDate).toLocaleDateString()}</span>
                                     </div>
-                                    <div className="flex items-center bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-500 dark:text-emerald-300 border border-emerald-500/35 dark:border-emerald-400/30 font-extrabold px-1.5 py-0.5 rounded-md text-[9px] uppercase tracking-wider shrink-0 shadow-sm shadow-emerald-500/5">
+                                    <div className="inline-flex items-center justify-center bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-500 dark:text-emerald-300 border border-emerald-500/35 dark:border-emerald-400/30 font-extrabold px-1.5 py-0.5 rounded-md text-[9px] uppercase tracking-wider shrink-0 shadow-sm shadow-emerald-500/5 relative -translate-y-[0.5px]">
                                       <span>Latest</span>
                                     </div>
                                   </>
@@ -1623,7 +1623,7 @@ export default function App() {
                     <File className="w-7 h-7 md:w-10 md:h-10" />
                   </div>
                   
-                  <div className="space-y-4">
+                  <div className="space-y-4 md:space-y-5">
                     {renamingFileId === selectedFile?.id && selectedFile ? (
                         <form 
                           onSubmit={(e) => handleRename(e, selectedFile.id)} 
@@ -1655,17 +1655,17 @@ export default function App() {
                         </h1>
                     )}
                     <div className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] font-black uppercase tracking-widest ${isDarkActive ? 'text-white/70' : 'text-slate-400'}`}>
-                      <span>{formatSize(selectedFile?.size || 0)}</span>
-                      <span className={`w-1.5 h-1.5 rounded-full ${isDarkActive ? 'bg-white/40' : 'bg-slate-200'}`} />
-                      <span>Ready for Transmission</span>
-                      <span className={`w-1.5 h-1.5 rounded-full ${isDarkActive ? 'bg-white/40' : 'bg-slate-200'}`} />
-                      <span className="bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-500 dark:text-emerald-300 border border-emerald-500/35 dark:border-emerald-400/30 font-extrabold px-2 py-0.5 rounded-md text-[9px] uppercase tracking-wider shrink-0 shadow-sm shadow-emerald-500/5">
+                      <span className="inline-flex items-center">{formatSize(selectedFile?.size || 0)}</span>
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isDarkActive ? 'bg-white/40' : 'bg-slate-200'}`} />
+                      <span className="inline-flex items-center">Ready for Transmission</span>
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isDarkActive ? 'bg-white/40' : 'bg-slate-200'}`} />
+                      <span className="inline-flex items-center justify-center bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-500 dark:text-emerald-300 border border-emerald-500/35 dark:border-emerald-400/30 font-extrabold px-2 py-0.5 rounded-md text-[9px] uppercase tracking-wider shrink-0 shadow-sm shadow-emerald-500/5 relative -translate-y-[1px] leading-none">
                         Latest
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-3.5 max-w-sm landscape:max-w-lg mx-auto w-full pt-4 landscape:pt-2">
+                  <div className="flex flex-col gap-3.5 max-w-sm landscape:max-w-lg mx-auto w-full pt-6 landscape:pt-3">
                     <div className="grid grid-cols-1 landscape:grid-cols-2 gap-3">
                       <a 
                         href={`/download/${selectedFile?.id}`}
