@@ -32,7 +32,9 @@ import {
   Github,
   Moon,
   Sun,
-  Smartphone
+  Smartphone,
+  Coffee,
+  DollarSign
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRIS_BASE64 } from './qrisData';
@@ -60,6 +62,8 @@ export default function App() {
   const [view, setView] = useState<'home' | 'download' | 'login'>('home');
   const [selectedFile, setSelectedFile] = useState<FileMetadata | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [globalFiles, setGlobalFiles] = useState<FileMetadata[]>([]);
+  const [isFetchingGlobal, setIsFetchingGlobal] = useState(false);
   
   // Instant Login Initialization
   const [adminPassword, setAdminPassword] = useState(() => {
@@ -101,8 +105,7 @@ export default function App() {
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   const [showQrisModal, setShowQrisModal] = useState(false);
 
-  const lowSpecMode = false;
-
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
 
   const toggleDarkMode = () => {
@@ -111,16 +114,51 @@ export default function App() {
 
   const isDarkActive = !!(backgroundImage || darkMode);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    }
+  }, []);
+
   const animProps = (props: {
     initial?: any;
     animate?: any;
     exit?: any;
     transition?: any;
   }) => {
-    return props;
+    const defaultTransition = isTouchDevice 
+      ? { duration: 0.12, ease: "easeOut" } 
+      : { duration: 0.22, ease: [0.16, 1, 0.3, 1] };
+
+    if (isTouchDevice) {
+      const cleanProps = (stateObj: any) => {
+        if (!stateObj) return stateObj;
+        const copy = { ...stateObj };
+        if ('y' in copy) copy.y = copy.y > 0 ? 2 : -2;
+        if ('x' in copy) copy.x = copy.x > 0 ? 2 : -2;
+        if ('scale' in copy) delete copy.scale;
+        return copy;
+      };
+      return {
+        initial: cleanProps(props.initial),
+        animate: cleanProps(props.animate),
+        exit: cleanProps(props.exit),
+        transition: props.transition || defaultTransition
+      };
+    }
+
+    return {
+      ...props,
+      transition: props.transition || defaultTransition
+    };
   };
 
   const hoverTapProps = (scaleHover = 1.05, scaleTap = 0.95) => {
+    if (isTouchDevice) {
+      return {
+        whileTap: { scale: scaleTap }
+      };
+    }
     return {
       whileHover: { scale: scaleHover },
       whileTap: { scale: scaleTap }
@@ -308,6 +346,7 @@ export default function App() {
   };
 
   const fetchFiles = async (parentId: string | null = currentFolderId) => {
+    setGlobalFiles([]);
     try {
       const ts = Date.now();
       const url = parentId ? `/api/files?parentId=${parentId}&t=${ts}` : `/api/files?t=${ts}`;
@@ -725,9 +764,32 @@ export default function App() {
     fetchFiles();
   }, [currentFolderId]);
 
-  const filteredFiles = files.filter(f => 
-    f.originalName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    if (searchTerm && globalFiles.length === 0 && !isFetchingGlobal) {
+      setIsFetchingGlobal(true);
+      const fetchGlobal = async () => {
+        try {
+          const ts = Date.now();
+          const res = await fetch(`/api/files?all=true&t=${ts}`);
+          if (res.ok) {
+            const data = await res.json();
+            setGlobalFiles(data);
+          }
+        } catch (err) {
+          console.error("Failed to fetch global files for search", err);
+        } finally {
+          setIsFetchingGlobal(false);
+        }
+      };
+      fetchGlobal();
+    }
+  }, [searchTerm, globalFiles.length, isFetchingGlobal]);
+
+  const filteredFiles = searchTerm
+    ? (globalFiles.length > 0 ? globalFiles : files).filter(f => 
+        f.type === 'file' && f.originalName.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : files;
 
   if (isLoadingSettings) {
     return (
@@ -849,8 +911,8 @@ export default function App() {
           <div className="flex items-center gap-2 md:gap-4">
             <nav className={`hidden md:flex items-center gap-4 text-[10px] font-black uppercase tracking-widest drop-shadow-sm ${isDarkActive ? 'text-white font-black' : 'text-slate-600'}`}>
               <button onClick={navigateToHome} className="hover:text-red-400 transition-colors flex items-center gap-2 cursor-pointer"><Home className="w-3.5 h-3.5"/> Beranda</button>
-              <button onClick={() => setShowQrisModal(true)} className="hover:text-pink-400 transition-colors flex items-center gap-2 cursor-pointer">
-                <Heart className="w-3.5 h-3.5"/> Traktir Kopi 😄
+              <button onClick={() => setShowQrisModal(true)} className="hover:text-red-400 transition-colors flex items-center gap-2 cursor-pointer">
+                <Coffee className="w-3.5 h-3.5 text-red-500 animate-pulse"/> Traktir Kopi 😄
               </button>
             </nav>
             <div className={`h-5 w-px hidden md:block ${isDarkActive ? 'bg-white/20' : 'bg-slate-200'}`} />
@@ -1107,7 +1169,7 @@ export default function App() {
                   isDarkActive ? 'text-white hover:bg-white/20' : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <Heart className="w-5 h-5 text-pink-500" /> Traktir Kopi 😄
+                <Coffee className="w-5 h-5 text-red-500 animate-pulse" /> Traktir Kopi 😄
               </button>
               {isLoggedIn && (
                 <button 
@@ -1219,20 +1281,34 @@ export default function App() {
               })}
               className="space-y-6"
             >
-              {/* Support Banner - ItsNoMercy style */}
-              <div className={`rounded-2xl p-6 text-white relative overflow-hidden group transition-[colors,transform] duration-150 border ${
-                isDarkActive ? 'bg-red-950/95 border-red-900/40 shadow-xs' : 'bg-red-600 border-red-700'
+              {/* Support Banner - Sleek Red/Crimson styled */}
+              <div className={`rounded-2xl p-6 relative overflow-hidden group transition-all duration-300 border ${
+                isDarkActive 
+                  ? 'bg-red-950/40 border-red-500/20 text-red-100 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_4px_24px_rgba(239,68,68,0.05)]' 
+                  : 'bg-red-50/70 border-red-100 text-red-900 shadow-[0_4px_24px_rgba(239,68,68,0.03)]'
               }`}>
-                 <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-150">
-                    <Heart className="w-24 h-24" />
+                 <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform duration-300 pointer-events-none">
+                    <Coffee className={`w-24 h-24 ${isDarkActive ? 'text-red-400' : 'text-red-600'}`} />
                  </div>
                  <div className="relative z-10 space-y-2">
-                    <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2 animate-none">SUPPORT US! 🔥</h2>
-                    <p className={`text-sm max-w-lg font-bold ${isDarkActive ? 'text-white' : 'text-red-100'}`}>Support kami agar bisa terus melakukan update setiap hari dan tetap menyediakan layanan gratis!</p>
+                    <h2 className={`text-xl font-black uppercase tracking-tighter flex items-center gap-2 ${isDarkActive ? 'text-red-300' : 'text-red-800'}`}>
+                      TRAKTIR KOPI ADMIN <Coffee className="w-5 h-5 animate-bounce shrink-0 text-red-500" />
+                    </h2>
+                    <p className={`text-sm max-w-lg font-bold leading-relaxed ${isDarkActive ? 'text-red-200/90' : 'text-red-700'}`}>
+                      Bantu kami menyeduh kopi hangat hari ini agar tetap semangat merawat server dan terus mengunggah update berkala tanpa batas!
+                    </p>
                     <div className="flex gap-3 pt-3">
-                       <button onClick={() => setShowQrisModal(true)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors cursor-pointer ${
-                         isDarkActive ? 'bg-white/20 backdrop-blur-md hover:bg-white/30 text-white border border-white/20' : 'bg-white text-red-600 hover:bg-red-50'
-                       }`}>Traktir Kopi 😄</button>
+                       <button 
+                         onClick={() => setShowQrisModal(true)} 
+                         className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 cursor-pointer flex items-center gap-2 ${
+                           isDarkActive 
+                             ? 'bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30' 
+                             : 'bg-red-600 hover:bg-red-700 text-white shadow-sm shadow-red-600/10'
+                         }`}
+                       >
+                         <DollarSign className="w-3.5 h-3.5" />
+                         <span>Traktir Kopi 😄</span>
+                       </button>
                     </div>
                  </div>
               </div>
@@ -1328,8 +1404,13 @@ export default function App() {
                     <input 
                       type="text" 
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search files..." 
+                      onChange={(e) => {
+                        // Hanya mengizinkan huruf, angka, spasi, titik (.), strip (-), dan underscore (_)
+                        // Blokir semua simbol aneh atau berbahaya yang berisiko memicu bug/injeksi
+                        const cleaned = e.target.value.replace(/[^a-zA-Z0-9.\-_ ()]/g, '');
+                        setSearchTerm(cleaned.slice(0, 50));
+                      }}
+                      placeholder="Search File" 
                       className={`pl-10 pr-4 py-2 border rounded-xl text-sm w-full outline-none transition-colors duration-150 font-bold ${
                         isDarkActive ? 'bg-white/10 border-white/20 text-white placeholder-white/50 focus:bg-white/20 focus:border-red-400' : 'bg-slate-50 border-slate-300 text-slate-950 placeholder-slate-500 focus:ring-2 focus:ring-red-500/15 focus:border-red-500'
                       }`}
@@ -1858,14 +1939,14 @@ export default function App() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
               transition={{ type: "spring", duration: 0.6, bounce: 0.15 }}
-              className={`relative w-full max-w-md my-auto rounded-3xl overflow-hidden border transition-all duration-300 shadow-[0_0_60px_-15px_rgba(239,68,68,0.4)] ${
+              className={`relative w-full max-w-md my-auto rounded-3xl overflow-hidden border transition-all duration-300 shadow-[0_0_50px_-15px_rgba(239,68,68,0.3)] ${
                 isDarkActive 
-                  ? 'bg-slate-950/80 border-white/10 text-white backdrop-blur-xl' 
+                  ? 'bg-slate-950/90 border-red-500/10 text-white backdrop-blur-xl' 
                   : 'bg-slate-900 border border-white/10 text-white shadow-lg'
               }`}
             >
               {/* Top Neon Accent Strip */}
-              <div className="h-1.5 bg-gradient-to-r from-red-500 via-amber-500 to-red-600" />
+              <div className="h-1.5 bg-gradient-to-r from-red-500 via-rose-500 to-red-600" />
 
               {/* Close Button X */}
               <button
@@ -1876,16 +1957,16 @@ export default function App() {
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="p-5 md:p-8 landscape:p-4 space-y-4 md:space-y-5 landscape:space-y-2.5 text-center relative z-10 animate-none">
+              <div className="p-5 md:p-8 space-y-4 text-center relative z-10 animate-none">
                 {/* Header Symbol */}
                 <div className="flex flex-col items-center gap-1.5 md:gap-2">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-505 font-bold shrink-0">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-500 font-bold shrink-0">
                     <Heart className="w-5 h-5 md:w-6 md:h-6 animate-pulse text-red-500 fill-red-500" />
                   </div>
                   <div>
                     <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.25em] text-red-400 block mb-0.5">SUPPORT...</span>
                     <h3 className="text-lg md:text-xl font-black uppercase tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-red-200 via-white to-red-200">
-                      Traktir Kopi...
+                      TRAKTIR KOPI...
                     </h3>
                   </div>
                 </div>
@@ -1909,7 +1990,7 @@ export default function App() {
                     whileHover={{ scale: 1.02, y: -1 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setShowQrisModal(false)}
-                    className="w-full py-3 md:py-3.5 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-200 shadow-md shadow-red-500/20 hover:shadow-red-500/30 flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-3 md:py-3.5 bg-gradient-to-r from-red-500 to-red-650 hover:from-red-600 hover:to-red-700 text-white rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest transition-all duration-200 shadow-md shadow-red-500/20 hover:shadow-red-500/30 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <span>SAYA PAHAM & TUTUP</span>
                   </motion.button>

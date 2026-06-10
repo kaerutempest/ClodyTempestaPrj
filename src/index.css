@@ -1,7 +1,25 @@
 @import "tailwindcss";
 
 html, body {
-  overscroll-behavior: none;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom sleek, high-performance scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
 }
 
 /* High-Performance 60FPS/120FPS GPU hardware-accelerated animations (Vivid Electric Sweep) */

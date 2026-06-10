@@ -810,12 +810,11 @@ app.post('/api/reorder', (req, res) => {
 
 app.get('/api/files', async (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-  const { parentId } = req.query;
-  const pid = parentId === 'null' || !parentId ? null : parentId as string;
+  const { parentId, all } = req.query;
 
   // Run silent auto-sync from GitHub if listing root directory or if empty.
   // This ensures the custom folders and APK files are never empty even after container restart/spin-down.
-  if (pid === null || Object.keys(filesMetadata).length <= 1) {
+  if (parentId === 'null' || !parentId || Object.keys(filesMetadata).length <= 1) {
     try {
       await autoSyncGithub(false);
     } catch (autoErr) {
@@ -823,6 +822,12 @@ app.get('/api/files', async (req, res) => {
     }
   }
 
+  if (all === 'true') {
+    const list = Object.values(filesMetadata);
+    return res.json(list);
+  }
+
+  const pid = parentId === 'null' || !parentId ? null : parentId as string;
   const list = Object.values(filesMetadata)
     .filter(f => f.parentId === pid)
     .sort((a, b) => {
