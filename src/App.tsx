@@ -1428,7 +1428,7 @@ export default function App() {
                 </AnimatePresence>
 
                 {/* File List Header */}
-                <div className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 px-6 py-2 text-[10px] font-bold uppercase tracking-widest border-b ${isDarkActive ? 'bg-white/10 text-white border-white/10 shadow-[0_2px_10px_rgba(0,0,0,0.1)]' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                <div className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-2 md:gap-4 px-4 md:px-6 py-2 text-[10px] font-bold uppercase tracking-widest border-b ${isDarkActive ? 'bg-white/10 text-white border-white/10 shadow-[0_2px_10px_rgba(0,0,0,0.1)]' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
                    <span>Name</span>
                    <span className="hidden md:block text-center">Size</span>
                    <span className="hidden md:block text-right">Date</span>
@@ -1446,11 +1446,11 @@ export default function App() {
                 >
                   {filteredFiles.map((file, index) => (
                     <motion.div 
-                      key={file.id}
-                      whileTap={{ scale: 0.985 }}
-                      className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-4 items-center px-6 py-3.5 transition-colors group cursor-pointer transform-gpu ${isDarkActive ? 'hover:bg-white/10' : 'hover:bg-slate-50'}`}
-                      onClick={() => file.type === 'folder' ? enterFolder(file) : window.location.href = `/download/${file.id}`}
-                      style={{ willChange: "transform" }}
+                       key={file.id}
+                       whileTap={{ scale: 0.985 }}
+                       className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-2 md:gap-4 items-center px-4 md:px-6 py-3 transition-colors group cursor-pointer transform-gpu ${isDarkActive ? 'hover:bg-white/10' : 'hover:bg-slate-50'}`}
+                       onClick={() => file.type === 'folder' ? enterFolder(file) : window.location.href = `/download/${file.id}`}
+                       style={{ willChange: "transform" }}
                     >
                        <div className="flex items-center gap-3 min-w-0 pr-2 grow">
                           {isLoggedIn && !searchTerm && (
@@ -1522,7 +1522,7 @@ export default function App() {
                          <div className="flex justify-end gap-2 relative shrink-0 items-center">
                             {file.type !== 'folder' && (
                               <>
-                                <span className="inline-flex items-center justify-center bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-500 dark:text-emerald-300 border border-emerald-500/35 dark:border-emerald-400/30 font-extrabold px-2 py-1 rounded-md text-[9px] uppercase tracking-wider shrink-0 shadow-sm shadow-emerald-500/5 leading-none">
+                                <span className="inline-flex items-center justify-center bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-500 dark:text-emerald-300 border border-emerald-500/35 dark:border-emerald-400/30 font-extrabold px-2 h-[26px] rounded-md text-[9px] uppercase tracking-wider shrink-0 shadow-sm shadow-emerald-500/5 leading-none">
                                   Latest
                                 </span>
                                 <button 
@@ -1530,10 +1530,10 @@ export default function App() {
                                     e.stopPropagation();
                                     window.location.href = `/download/${file.id}`;
                                   }}
-                                  className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 dark:text-red-400 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                                  className="h-[26px] px-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 dark:text-red-400 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer leading-none"
                                   title="Download"
                                 >
-                                  <Download className="w-3 h-3" />
+                                  <Download className="w-3 h-3 shrink-0" />
                                   <span>Download</span>
                                 </button>
                               </>
