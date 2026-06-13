@@ -106,6 +106,12 @@ const saveSettings = () => {
 const ensurePrepopulatedResources = () => {
   const KAEBLOX_FOLDER_ID = 'c51a3e51f82873d1';
   const KAEDEX_FOLDER_ID = 'bbc485cc42f83b2f';
+  const CXTREAM_FOLDER_ID = '3903d96011095f22';
+
+  // Clean up the legacy duplicated folder entry
+  if (filesMetadata['cxtream_folder_id']) {
+    delete filesMetadata['cxtream_folder_id'];
+  }
 
   // Clean up any old erroneously duplicated Kaedex files that were stored inside Kaeblox folder
   Object.keys(filesMetadata).forEach(id => {
@@ -223,6 +229,25 @@ const ensurePrepopulatedResources = () => {
       filesMetadata[apk.id].githubAssetId = apk.assetId;
     }
   });
+
+  // 5. Ensure CxTream folder exists
+  if (!filesMetadata[CXTREAM_FOLDER_ID]) {
+    filesMetadata[CXTREAM_FOLDER_ID] = {
+      id: CXTREAM_FOLDER_ID,
+      originalName: 'CxTream',
+      size: 0,
+      mimeType: 'application/x-directory',
+      uploadDate: 1780972012240,
+      type: 'folder',
+      parentId: null,
+      githubReleaseTag: 'CxTream'
+    };
+  } else {
+    filesMetadata[CXTREAM_FOLDER_ID].originalName = 'CxTream';
+    filesMetadata[CXTREAM_FOLDER_ID].githubReleaseTag = 'CxTream';
+    filesMetadata[CXTREAM_FOLDER_ID].type = 'folder';
+    filesMetadata[CXTREAM_FOLDER_ID].parentId = null;
+  }
 
   saveMetadata();
 };
@@ -840,12 +865,20 @@ app.get('/api/files', async (req, res) => {
       if (a.type === 'folder' && b.type !== 'folder') return -1;
       if (a.type !== 'folder' && b.type === 'folder') return 1;
 
-      // 3. Folder sorting: Keep "Kaeblox" folder at the very top of all folders, then sort others using natural sort
+      // 3. Folder sorting: Keep specific sequence: Kaeblox -> Kaedex -> CxTream, then others
       if (a.type === 'folder' && b.type === 'folder') {
-        const aIsKaeblox = a.originalName.toLowerCase().includes('kaeblox');
-        const bIsKaeblox = b.originalName.toLowerCase().includes('kaeblox');
-        if (aIsKaeblox && !bIsKaeblox) return -1;
-        if (!aIsKaeblox && bIsKaeblox) return 1;
+        const getFolderPriority = (folderName: string) => {
+          const lower = folderName.toLowerCase();
+          if (lower.includes('kaeblox')) return 1;
+          if (lower.includes('kaedex')) return 2;
+          if (lower.includes('cxtream')) return 3;
+          return 99;
+        };
+        const pA = getFolderPriority(a.originalName);
+        const pB = getFolderPriority(b.originalName);
+        if (pA !== pB) {
+          return pA - pB;
+        }
 
         return a.originalName.localeCompare(b.originalName, undefined, { numeric: true, sensitivity: 'base' });
       }

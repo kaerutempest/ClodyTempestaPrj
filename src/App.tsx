@@ -1584,7 +1584,11 @@ export default function App() {
                               <div className={`flex items-center text-[10px] gap-2 mt-0.5 ${isDarkActive ? 'text-white/60 drop-shadow-sm' : 'text-slate-400'}`}>
                                 {file.type === 'folder' ? (
                                   <span className="font-bold text-red-500/95 dark:text-red-400/95 tracking-wider uppercase text-[9px]">
-                                    {file.originalName.toLowerCase().includes('kaedex') ? 'Codex lite' : 'Delta lite'}
+                                    {file.originalName.toLowerCase().includes('kaedex') 
+                                      ? 'Codex lite' 
+                                      : file.originalName.toLowerCase().includes('cxtream')
+                                        ? 'Anime Streaming app'
+                                        : 'Delta lite'}
                                   </span>
                                 ) : (
                                   <div className="flex md:hidden gap-2 items-center">
