@@ -249,6 +249,26 @@ const ensurePrepopulatedResources = () => {
     filesMetadata[CXTREAM_FOLDER_ID].parentId = null;
   }
 
+  // 6. Ensure Roblox folder exists
+  const ROBLOX_FOLDER_ID = 'roblox_folder_id';
+  if (!filesMetadata[ROBLOX_FOLDER_ID]) {
+    filesMetadata[ROBLOX_FOLDER_ID] = {
+      id: ROBLOX_FOLDER_ID,
+      originalName: 'Roblox',
+      size: 0,
+      mimeType: 'application/x-directory',
+      uploadDate: 1780972012250,
+      type: 'folder',
+      parentId: null,
+      githubReleaseTag: 'Roblox'
+    };
+  } else {
+    filesMetadata[ROBLOX_FOLDER_ID].originalName = 'Roblox';
+    filesMetadata[ROBLOX_FOLDER_ID].githubReleaseTag = 'Roblox';
+    filesMetadata[ROBLOX_FOLDER_ID].type = 'folder';
+    filesMetadata[ROBLOX_FOLDER_ID].parentId = null;
+  }
+
   saveMetadata();
 };
 
@@ -865,13 +885,14 @@ app.get('/api/files', async (req, res) => {
       if (a.type === 'folder' && b.type !== 'folder') return -1;
       if (a.type !== 'folder' && b.type === 'folder') return 1;
 
-      // 3. Folder sorting: Keep specific sequence: Kaeblox -> Kaedex -> CxTream, then others
+      // 3. Folder sorting: Keep specific sequence: Kaeblox -> Kaedex -> CxTream -> Roblox, then others
       if (a.type === 'folder' && b.type === 'folder') {
         const getFolderPriority = (folderName: string) => {
           const lower = folderName.toLowerCase();
           if (lower.includes('kaeblox')) return 1;
           if (lower.includes('kaedex')) return 2;
           if (lower.includes('cxtream')) return 3;
+          if (lower.includes('roblox')) return 4;
           return 99;
         };
         const pA = getFolderPriority(a.originalName);

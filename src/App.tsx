@@ -1588,7 +1588,9 @@ export default function App() {
                                       ? 'Codex lite' 
                                       : file.originalName.toLowerCase().includes('cxtream')
                                         ? 'Anime Streaming app'
-                                        : 'Delta lite'}
+                                        : file.originalName.toLowerCase().includes('roblox')
+                                          ? 'roblox for pc'
+                                          : 'Delta lite'}
                                   </span>
                                 ) : (
                                   <div className="flex md:hidden gap-2 items-center">
