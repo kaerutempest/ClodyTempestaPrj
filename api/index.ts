@@ -260,11 +260,11 @@ const ensurePrepopulatedResources = () => {
       uploadDate: 1780972012250,
       type: 'folder',
       parentId: null,
-      githubReleaseTag: 'Roblox'
+      githubReleaseTag: 'Roblox.pc'
     };
   } else {
     filesMetadata[ROBLOX_FOLDER_ID].originalName = 'Roblox';
-    filesMetadata[ROBLOX_FOLDER_ID].githubReleaseTag = 'Roblox';
+    filesMetadata[ROBLOX_FOLDER_ID].githubReleaseTag = 'Roblox.pc';
     filesMetadata[ROBLOX_FOLDER_ID].type = 'folder';
     filesMetadata[ROBLOX_FOLDER_ID].parentId = null;
   }
@@ -559,7 +559,7 @@ app.post('/api/upload', (req, res, next) => {
 });
 
 let lastAutoSyncTime = 0;
-const AUTO_SYNC_COOLDOWN = 10 * 60 * 1000; // 10 minutes cache/cooldown for public requests
+const AUTO_SYNC_COOLDOWN = 30 * 1000; // 30 seconds cache/cooldown for public requests
 
 async function autoSyncGithub(force = false) {
   const now = Date.now();
@@ -624,9 +624,15 @@ async function autoSyncGithub(force = false) {
           displayFolderName = 'Kaedex ( Android 11-17+ ) [ Non Key ]';
       }
 
+      // Force format folder name for Roblox as demanded by user
+      if (tag_name?.toLowerCase().includes('roblox') || displayFolderName?.toLowerCase().includes('roblox') || displayFolderName === 'Roblox') {
+          displayFolderName = 'Roblox';
+      }
+
       // Find or create the directory folder for this release
       const isCurrentKaeblox = !!(tag_name?.toLowerCase().includes('kaeblox') || displayFolderName?.toLowerCase().includes('kaeblox'));
       const isCurrentKaedex = !!(tag_name?.toLowerCase().includes('kaedex') || displayFolderName?.toLowerCase().includes('kaedex'));
+      const isCurrentRoblox = !!(tag_name?.toLowerCase().includes('roblox') || displayFolderName?.toLowerCase().includes('roblox'));
 
       let folderId = Object.keys(filesMetadata).find(id => {
           const f = filesMetadata[id];
@@ -649,6 +655,15 @@ async function autoSyncGithub(force = false) {
               const fNameLower = f.originalName.toLowerCase();
               const fTagLower = f.githubReleaseTag?.toLowerCase() || '';
               if (fNameLower.includes('kaedex') || fTagLower.includes('kaedex')) {
+                  return true;
+              }
+          }
+
+          // If the current release we are processing is Roblox
+          if (isCurrentRoblox) {
+              const fNameLower = f.originalName.toLowerCase();
+              const fTagLower = f.githubReleaseTag?.toLowerCase() || '';
+              if (fNameLower.includes('roblox') || fTagLower.includes('roblox')) {
                   return true;
               }
           }
@@ -678,6 +693,9 @@ async function autoSyncGithub(force = false) {
           }
           if (tag_name?.toLowerCase().includes('kaedex') || displayFolderName === 'Kaedex ( Android 11-17+ ) [ Non Key ]') {
               filesMetadata[folderId].originalName = displayFolderName;
+          }
+          if (tag_name?.toLowerCase().includes('roblox') || displayFolderName === 'Roblox') {
+              filesMetadata[folderId].originalName = 'Roblox';
           }
           if (!filesMetadata[folderId].githubReleaseTag) {
               filesMetadata[folderId].githubReleaseTag = tag_name;
