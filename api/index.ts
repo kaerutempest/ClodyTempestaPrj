@@ -249,25 +249,19 @@ const ensurePrepopulatedResources = () => {
     filesMetadata[CXTREAM_FOLDER_ID].parentId = null;
   }
 
-  // 6. Ensure Roblox folder exists
-  const ROBLOX_FOLDER_ID = 'roblox_folder_id';
-  if (!filesMetadata[ROBLOX_FOLDER_ID]) {
-    filesMetadata[ROBLOX_FOLDER_ID] = {
-      id: ROBLOX_FOLDER_ID,
-      originalName: 'Roblox',
-      size: 0,
-      mimeType: 'application/x-directory',
-      uploadDate: 1780972012250,
-      type: 'folder',
-      parentId: null,
-      githubReleaseTag: 'Roblox.pc'
-    };
-  } else {
-    filesMetadata[ROBLOX_FOLDER_ID].originalName = 'Roblox';
-    filesMetadata[ROBLOX_FOLDER_ID].githubReleaseTag = 'Roblox.pc';
-    filesMetadata[ROBLOX_FOLDER_ID].type = 'folder';
-    filesMetadata[ROBLOX_FOLDER_ID].parentId = null;
+  // Clean up Roblox folder & files as requested by user (cancel Roblox PC)
+  if (filesMetadata['roblox_folder_id']) {
+    delete filesMetadata['roblox_folder_id'];
   }
+  if (filesMetadata['roblox_pc_exe_file']) {
+    delete filesMetadata['roblox_pc_exe_file'];
+  }
+  Object.keys(filesMetadata).forEach(id => {
+    const f = filesMetadata[id];
+    if (f && (f.parentId === 'roblox_folder_id' || f.githubReleaseTag === 'Roblox.pc' || (f.originalName && f.originalName.toLowerCase().includes('roblox')))) {
+      delete filesMetadata[id];
+    }
+  });
 
   saveMetadata();
 };
@@ -584,7 +578,7 @@ async function autoSyncGithub(force = false) {
           repo: ghConf.repo,
           per_page: 30
       });
-      releasesList = relListResp.data;
+      releasesList = relListResp.data || [];
   } catch (listErr) {
       console.warn('AutoSync: listing all releases failed, trying tag backup', listErr);
   }
@@ -602,7 +596,35 @@ async function autoSyncGithub(force = false) {
       }
   }
 
-  if (releasesList.length === 0) {
+  // Ensure we also fetch any explicitly defined folder tags that might have been excluded or paginated out from listReleases
+  const folderTags = new Set<string>(['Kaeblox(ForA12+)', 'Kaedex', 'CxTream']);
+  Object.values(filesMetadata).forEach((f: any) => {
+    if (f && f.type === 'folder' && f.githubReleaseTag) {
+      folderTags.add(f.githubReleaseTag);
+    }
+  });
+
+  for (const tag of folderTags) {
+    const alreadyFetched = releasesList && Array.isArray(releasesList) && releasesList.some(r => r && r.tag_name && r.tag_name.toLowerCase() === tag.toLowerCase());
+    if (!alreadyFetched) {
+      try {
+        console.log(`AutoSync: tag ${tag} not found in public list, fetching individually`);
+        const releaseResp = await octokit.rest.repos.getReleaseByTag({ 
+            owner: ghConf.owner, 
+            repo: ghConf.repo, 
+            tag: tag 
+        });
+        if (releaseResp && releaseResp.data) {
+          if (!releasesList) releasesList = [];
+          releasesList.push(releaseResp.data);
+        }
+      } catch (tagErr) {
+        console.warn(`AutoSync: failed to fetch tag ${tag} individually`, tagErr);
+      }
+    }
+  }
+
+  if (!releasesList || releasesList.length === 0) {
       return { error: 'No releases found on GitHub' };
   }
 
@@ -624,15 +646,9 @@ async function autoSyncGithub(force = false) {
           displayFolderName = 'Kaedex ( Android 11-17+ ) [ Non Key ]';
       }
 
-      // Force format folder name for Roblox as demanded by user
-      if (tag_name?.toLowerCase().includes('roblox') || displayFolderName?.toLowerCase().includes('roblox') || displayFolderName === 'Roblox') {
-          displayFolderName = 'Roblox';
-      }
-
       // Find or create the directory folder for this release
       const isCurrentKaeblox = !!(tag_name?.toLowerCase().includes('kaeblox') || displayFolderName?.toLowerCase().includes('kaeblox'));
       const isCurrentKaedex = !!(tag_name?.toLowerCase().includes('kaedex') || displayFolderName?.toLowerCase().includes('kaedex'));
-      const isCurrentRoblox = !!(tag_name?.toLowerCase().includes('roblox') || displayFolderName?.toLowerCase().includes('roblox'));
 
       let folderId = Object.keys(filesMetadata).find(id => {
           const f = filesMetadata[id];
@@ -655,15 +671,6 @@ async function autoSyncGithub(force = false) {
               const fNameLower = f.originalName.toLowerCase();
               const fTagLower = f.githubReleaseTag?.toLowerCase() || '';
               if (fNameLower.includes('kaedex') || fTagLower.includes('kaedex')) {
-                  return true;
-              }
-          }
-
-          // If the current release we are processing is Roblox
-          if (isCurrentRoblox) {
-              const fNameLower = f.originalName.toLowerCase();
-              const fTagLower = f.githubReleaseTag?.toLowerCase() || '';
-              if (fNameLower.includes('roblox') || fTagLower.includes('roblox')) {
                   return true;
               }
           }
@@ -693,9 +700,6 @@ async function autoSyncGithub(force = false) {
           }
           if (tag_name?.toLowerCase().includes('kaedex') || displayFolderName === 'Kaedex ( Android 11-17+ ) [ Non Key ]') {
               filesMetadata[folderId].originalName = displayFolderName;
-          }
-          if (tag_name?.toLowerCase().includes('roblox') || displayFolderName === 'Roblox') {
-              filesMetadata[folderId].originalName = 'Roblox';
           }
           if (!filesMetadata[folderId].githubReleaseTag) {
               filesMetadata[folderId].githubReleaseTag = tag_name;
@@ -903,14 +907,13 @@ app.get('/api/files', async (req, res) => {
       if (a.type === 'folder' && b.type !== 'folder') return -1;
       if (a.type !== 'folder' && b.type === 'folder') return 1;
 
-      // 3. Folder sorting: Keep specific sequence: Kaeblox -> Kaedex -> CxTream -> Roblox, then others
+      // 3. Folder sorting: Keep specific sequence: Kaeblox -> Kaedex -> CxTream, then others
       if (a.type === 'folder' && b.type === 'folder') {
         const getFolderPriority = (folderName: string) => {
           const lower = folderName.toLowerCase();
           if (lower.includes('kaeblox')) return 1;
           if (lower.includes('kaedex')) return 2;
           if (lower.includes('cxtream')) return 3;
-          if (lower.includes('roblox')) return 4;
           return 99;
         };
         const pA = getFolderPriority(a.originalName);
@@ -997,16 +1000,106 @@ const streamFromUrl = (url: string, res: express.Response, filename?: string, at
   });
 };
 
-app.get('/download/:id', (req, res) => {
+const resolveRedirectUrl = (urlStr: string, maxRedirects = 5): Promise<string> => {
+  return new Promise((resolve) => {
+    const resolveInternal = (currentUrl: string, depth: number) => {
+      if (depth > maxRedirects) {
+        return resolve(currentUrl);
+      }
+
+      try {
+        const parsedUrl = new URL(currentUrl);
+        const options = {
+          method: 'HEAD',
+          hostname: parsedUrl.hostname,
+          path: parsedUrl.pathname + parsedUrl.search,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          }
+        };
+
+        const req = https.request(options, (res) => {
+          const statusCode = res.statusCode || 0;
+          if (statusCode >= 300 && statusCode < 400 && res.headers.location) {
+            let nextUrl = res.headers.location;
+            if (!nextUrl.startsWith('http')) {
+              nextUrl = new URL(nextUrl, currentUrl).href;
+            }
+            resolveInternal(nextUrl, depth + 1);
+          } else {
+            resolve(currentUrl);
+          }
+        });
+
+        req.on('error', (err) => {
+          console.error('Redirect resolution error:', err);
+          resolve(currentUrl);
+        });
+
+        req.end();
+      } catch (err) {
+        console.error('Redirect resolution URL parsing error:', err);
+        resolve(currentUrl);
+      }
+    };
+
+    resolveInternal(urlStr, 0);
+  });
+};
+
+function formatBytes(bytes: number, decimals = 2) {
+  if (!bytes || bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+app.get('/api/get-direct-url/:id', async (req, res) => {
+  const id = req.params.id;
+  const metadata = filesMetadata[id];
+  if (!metadata) return res.status(404).json({ error: 'File not found' });
+
+  if (metadata.githubDownloadUrl) {
+    try {
+      const directUrl = await resolveRedirectUrl(metadata.githubDownloadUrl);
+      return res.json({ success: true, url: directUrl });
+    } catch (err) {
+      return res.json({ success: true, url: metadata.githubDownloadUrl });
+    }
+  }
+
+  // Local file fallback
+  return res.json({ success: true, url: `/download/local/${id}` });
+});
+
+app.get('/download/local/:id', (req, res) => {
   const id = req.params.id;
   const metadata = filesMetadata[id];
   if (!metadata) return res.status(404).send('File not found');
-  
+
   if (metadata.type !== 'folder') {
     metadata.downloadCount = (metadata.downloadCount || 0) + 1;
     saveMetadata();
   }
-  
+
+  const files = fs.readdirSync(uploadDir);
+  const actualFile = files.find(f => f.startsWith(id));
+  if (!actualFile) return res.status(404).send('File missing on disk');
+  res.download(path.join(uploadDir, actualFile), metadata.originalName);
+});
+
+app.get('/download/stream/:id', (req, res) => {
+  const id = req.params.id;
+  const metadata = filesMetadata[id];
+  if (!metadata) return res.status(404).send('File not found');
+
+  if (metadata.type !== 'folder') {
+    metadata.downloadCount = (metadata.downloadCount || 0) + 1;
+    saveMetadata();
+  }
+
   if (metadata.githubDownloadUrl) {
     return streamFromUrl(metadata.githubDownloadUrl, res, metadata.originalName);
   }
@@ -1015,6 +1108,238 @@ app.get('/download/:id', (req, res) => {
   const actualFile = files.find(f => f.startsWith(id));
   if (!actualFile) return res.status(404).send('File missing on disk');
   res.download(path.join(uploadDir, actualFile), metadata.originalName);
+});
+
+app.get('/download/:id', (req, res) => {
+  const id = req.params.id;
+  const metadata = filesMetadata[id];
+  if (!metadata) return res.status(404).send('File not found');
+
+  if (metadata.type === 'folder') {
+    return res.redirect('/');
+  }
+
+  // Support HEAD requests from React triggerDownload
+  if (req.method === 'HEAD') {
+    metadata.downloadCount = (metadata.downloadCount || 0) + 1;
+    saveMetadata();
+    return res.status(200).end();
+  }
+
+  // Increment download count
+  metadata.downloadCount = (metadata.downloadCount || 0) + 1;
+  saveMetadata();
+
+  const sizeStr = formatBytes(metadata.size || 0);
+
+  // Serve a clean, ultra-minimal automatic downloader page to mask GitHub S3 URLs completely without using server bandwidth
+  const htmlContent = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Downloading ${metadata.originalName}...</title>
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .loader-box {
+      text-align: center;
+      max-width: 420px;
+      width: 85%;
+      padding: 32px 24px;
+      background: rgba(17, 24, 39, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    .file-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 4px;
+      word-break: break-all;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .file-size {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 24px;
+    }
+    .progress-container {
+      background: #1e293b;
+      height: 6px;
+      border-radius: 3px;
+      width: 100%;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .progress-bar {
+      background: linear-gradient(90deg, #3b82f6, #6366f1);
+      height: 100%;
+      width: 0%;
+      border-radius: 3px;
+      transition: width 0.1s linear;
+    }
+    .status-text {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .percentage {
+      font-size: 13px;
+      color: #3b82f6;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+    .info {
+      font-size: 11px;
+      color: #475569;
+      line-height: 1.5;
+    }
+    .fallback-link {
+      margin-top: 16px;
+      display: inline-block;
+      font-size: 11px;
+      color: #475569;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .fallback-link:hover {
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="loader-box">
+    <div class="file-name">${metadata.originalName}</div>
+    <div class="file-size">Size: ${sizeStr}</div>
+    
+    <div class="status-text" id="status-text">Preparing download...</div>
+    <div class="progress-container">
+      <div id="progress-bar" class="progress-bar"></div>
+    </div>
+    <div class="percentage" id="percent-text">0%</div>
+
+    <div class="info">
+      Please do not close this window. Your download is being processed securely.
+    </div>
+    <a href="/download/stream/${id}" class="fallback-link">Problems downloading? Click here to stream directly</a>
+  </div>
+
+  <script>
+    const fileId = "${id}";
+    const fileName = "${metadata.originalName.replace(/"/g, '\\"')}";
+    const fileMime = "${metadata.mimeType || 'application/octet-stream'}";
+    const fileSize = ${metadata.size || 0};
+
+    const progressBar = document.getElementById('progress-bar');
+    const percentText = document.getElementById('percent-text');
+    const statusText = document.getElementById('status-text');
+
+    async function startDownload() {
+      try {
+        statusText.innerText = "Connecting to source...";
+        
+        // 1. Resolve final direct URL (bypassing github redirect to get S3 object directly)
+        const urlRes = await fetch('/api/get-direct-url/' + fileId);
+        if (!urlRes.ok) throw new Error("Failed to resolve URL");
+        const urlData = await urlRes.json();
+        if (!urlData.success || !urlData.url) throw new Error("Invalid URL");
+
+        statusText.innerText = "Downloading file...";
+        
+        // 2. Fetch directly from S3 (CORS-enabled)
+        const response = await fetch(urlData.url);
+        if (!response.ok) throw new Error("Direct download failed");
+
+        const reader = response.body.getReader();
+        const totalBytes = fileSize || Number(response.headers.get('content-length')) || 0;
+        let receivedBytes = 0;
+        const chunks = [];
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            chunks.push(value);
+            receivedBytes += value.length;
+            if (totalBytes > 0) {
+              const percent = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
+              progressBar.style.width = percent + '%';
+              percentText.innerText = percent + '%';
+              statusText.innerText = "Downloading (" + formatBytes(receivedBytes) + " of " + formatBytes(totalBytes) + ")...";
+            } else {
+              statusText.innerText = "Downloading (" + formatBytes(receivedBytes) + ")...";
+            }
+          }
+        }
+
+        statusText.innerText = "Saving to your device...";
+        progressBar.style.width = '100%';
+        percentText.innerText = '100%';
+
+        // 3. Trigger local save using Blob (ensures current domain is recorded in browser download history)
+        const blob = new Blob(chunks, { type: fileMime });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+          statusText.innerText = "Completed!";
+          setTimeout(() => {
+            window.close();
+            // fallback in case window can't be closed
+            setTimeout(() => {
+              window.location.href = "/";
+            }, 500);
+          }, 1000);
+        }, 1000);
+
+      } catch (err) {
+        console.error("Client download error, falling back to server-stream:", err);
+        statusText.innerText = "Streaming via backup server...";
+        window.location.href = "/download/stream/" + fileId;
+      }
+    }
+
+    function formatBytes(bytes, decimals = 2) {
+      if (!bytes || bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    window.addEventListener('DOMContentLoaded', startDownload);
+  </script>
+</body>
+</html>`;
+
+  res.send(htmlContent);
+});
+
+// Also support /download/d/:id (the specific short route format)
+app.get('/download/d/:id', (req, res) => {
+  res.redirect(`/download/${req.params.id}`);
 });
 
 app.get('/preview/:id', (req, res) => {

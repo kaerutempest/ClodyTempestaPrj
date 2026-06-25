@@ -49,6 +49,7 @@ interface FileMetadata {
   parentId: string | null;
   githubReleaseTag?: string;
   downloadCount?: number;
+  githubDownloadUrl?: string;
 }
 
 export default function App() {
@@ -104,6 +105,8 @@ export default function App() {
 
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   const [showQrisModal, setShowQrisModal] = useState(false);
+  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
 
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
@@ -395,6 +398,84 @@ export default function App() {
       alert('Error syncing from GitHub');
     } finally {
       setIsSyncingGithub(false);
+    }
+  };
+
+  const triggerDownload = async (file: FileMetadata) => {
+    if (file.type === 'folder') return;
+
+    // Track download count in backend
+    try {
+      fetch(`/api/download/${file.id}`, { method: 'HEAD' }).catch(() => {});
+    } catch (e) {}
+
+    setDownloadingFileId(file.id);
+    setDownloadProgress(0);
+
+    try {
+      // 1. Get the direct final URL (resolves GitHub redirect to CDN direct S3/objects.githubusercontent link)
+      const urlRes = await fetch(`/api/get-direct-url/${file.id}`);
+      if (!urlRes.ok) throw new Error("Gagal mendapatkan URL unduhan");
+      const urlData = await urlRes.json();
+      if (!urlData.success || !urlData.url) throw new Error("URL unduhan tidak valid");
+
+      // 2. Fetch direct from the CORS-enabled direct URL
+      const response = await fetch(urlData.url);
+      if (!response.ok) {
+        throw new Error(`Failed to download from source (Status ${response.status})`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        // Fallback if reader is not supported
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = file.originalName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+        setDownloadingFileId(null);
+        return;
+      }
+
+      const totalBytes = file.size || Number(response.headers.get('content-length')) || 0;
+      let receivedBytes = 0;
+      const chunks: Uint8Array[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          chunks.push(value);
+          receivedBytes += value.length;
+          if (totalBytes > 0) {
+            const percent = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
+            setDownloadProgress(percent);
+          }
+        }
+      }
+
+      const blob = new Blob(chunks, { type: file.mimeType || 'application/octet-stream' });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = file.originalName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 1000);
+
+      setDownloadingFileId(null);
+    } catch (err) {
+      console.error('Frontend download error, falling back to server stream:', err);
+      // Fallback to standard server-authoritative stream which also hides github completely
+      window.location.href = `/download/stream/${file.id}`;
+      setDownloadingFileId(null);
     }
   };
 
@@ -1530,7 +1611,7 @@ export default function App() {
                        key={file.id}
                        whileTap={{ scale: 0.985 }}
                        className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-2 md:gap-4 items-center px-4 md:px-6 py-3 transition-colors group cursor-pointer transform-gpu ${isDarkActive ? 'hover:bg-white/10' : 'hover:bg-slate-50'}`}
-                       onClick={() => file.type === 'folder' ? enterFolder(file) : window.location.href = `/download/${file.id}`}
+                       onClick={() => file.type === 'folder' ? enterFolder(file) : triggerDownload(file)}
                        style={{ willChange: "transform" }}
                     >
                        <div className="flex items-center gap-3 min-w-0 pr-2 grow">
@@ -1588,9 +1669,7 @@ export default function App() {
                                       ? 'Codex lite' 
                                       : file.originalName.toLowerCase().includes('cxtream')
                                         ? 'Anime Streaming app'
-                                        : file.originalName.toLowerCase().includes('roblox')
-                                          ? 'roblox for pc'
-                                          : 'Delta lite'}
+                                        : 'Delta lite'}
                                   </span>
                                 ) : (
                                   <div className="flex md:hidden gap-2 items-center">
@@ -1615,7 +1694,7 @@ export default function App() {
                                 <button 
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    window.location.href = `/download/${file.id}`;
+                                    triggerDownload(file);
                                   }}
                                   className="h-[26px] px-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-500 dark:text-red-400 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer leading-none"
                                   title="Download"
@@ -1754,13 +1833,13 @@ export default function App() {
 
                   <div className="flex flex-col gap-3.5 max-w-sm landscape:max-w-lg mx-auto w-full pt-6 landscape:pt-3">
                     <div className="grid grid-cols-1 landscape:grid-cols-2 gap-3">
-                      <a 
-                        href={`/download/${selectedFile?.id}`}
-                        className="w-full py-3 landscape:py-2.5 sm:py-4 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-xl shadow-red-600/30 active:scale-95 text-xs text-center"
+                      <button 
+                        onClick={() => selectedFile && triggerDownload(selectedFile)}
+                        className="w-full py-3 landscape:py-2.5 sm:py-4 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-red-700 transition-all shadow-xl shadow-red-600/30 active:scale-95 text-xs text-center cursor-pointer"
                       >
                         <Download className="w-5 h-5 shrink-0" />
                         <span>DOWNLOAD FILE</span>
-                      </a>
+                      </button>
                       <button 
                         onClick={() => selectedFile && copyLink(selectedFile.id)}
                         className={`w-full py-3 landscape:py-2.5 sm:py-4 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all border text-xs cursor-pointer ${isDarkActive ? 'bg-white/20 border-white/30 text-white hover:bg-white/30 shadow-lg shadow-black/5' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
@@ -1925,6 +2004,67 @@ export default function App() {
                     <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
                   </motion.button>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Downloading Progress Modal Overlay */}
+      <AnimatePresence>
+        {downloadingFileId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[9999] flex justify-center p-4 overflow-y-auto w-full h-full"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              transition={{ type: "spring", duration: 0.6, bounce: 0.15 }}
+              className={`relative w-full max-w-sm my-auto rounded-3xl overflow-hidden border transition-all duration-300 shadow-[0_0_50px_-15px_rgba(59,130,246,0.3)] ${
+                isDarkActive 
+                  ? 'bg-slate-950/90 border-blue-500/10 text-white backdrop-blur-xl' 
+                  : 'bg-slate-900 border border-white/10 text-white shadow-lg'
+              }`}
+            >
+              {/* Top Neon Accent Strip */}
+              <div className="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600" />
+
+              <div className="p-6 md:p-8 space-y-6 text-center relative z-10">
+                {/* Header Symbol */}
+                <div className="flex flex-col items-center gap-1.5 md:gap-2">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-500 font-bold shrink-0">
+                    <Download className="w-6 h-6 text-blue-400 animate-bounce" />
+                  </div>
+                  <div>
+                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.25em] text-blue-400 block mb-0.5">DOWNLOADING...</span>
+                    <h3 className="text-base md:text-lg font-black uppercase tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-blue-200 via-white to-blue-200 truncate max-w-[280px] mx-auto">
+                      {files.find(f => f.id === downloadingFileId)?.originalName || 'File'}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Progress bar and details */}
+                <div className="space-y-3">
+                  <div className="relative w-full h-3 bg-slate-800/80 rounded-full overflow-hidden border border-white/5">
+                    <div 
+                      className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-100"
+                      style={{ width: `${downloadProgress}%` }}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-xs font-mono px-1">
+                    <span className="text-slate-400">Progress</span>
+                    <span className="text-blue-400 font-bold">{downloadProgress}%</span>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-400 font-bold leading-relaxed">
+                  Mohon tunggu sebentar, file sedang diunduh langsung ke perangkat Anda secara aman.
+                </p>
               </div>
             </motion.div>
           </motion.div>
