@@ -875,17 +875,24 @@ app.post('/api/reorder', (req, res) => {
   res.json({ success: true });
 });
 
+let lastSyncTime = 0;
+
 app.get('/api/files', async (req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   const { parentId, all } = req.query;
 
   // Run silent auto-sync from GitHub if listing root directory or if empty.
-  // This ensures the custom folders and APK files are never empty even after container restart/spin-down.
+  // Cached for 10 minutes to prevent exhausting serverless CPU & function timeouts.
   if (parentId === 'null' || !parentId || Object.keys(filesMetadata).length <= 1) {
-    try {
-      await autoSyncGithub(false);
-    } catch (autoErr) {
-      console.error('Failed processing background autoSync:', autoErr);
+    const now = Date.now();
+    const TEN_MINUTES = 10 * 60 * 1000;
+    if (now - lastSyncTime > TEN_MINUTES) {
+      lastSyncTime = now;
+      try {
+        autoSyncGithub(false); // Run asynchronously in background without blocking response
+      } catch (autoErr) {
+        console.error('Failed processing background autoSync:', autoErr);
+      }
     }
   }
 
@@ -1101,7 +1108,8 @@ app.get('/download/stream/:id', (req, res) => {
   }
 
   if (metadata.githubDownloadUrl) {
-    return streamFromUrl(metadata.githubDownloadUrl, res, metadata.originalName);
+    // Redirect instead of streaming through our server to conserve 100% bandwidth
+    return res.redirect(metadata.githubDownloadUrl);
   }
 
   const files = fs.readdirSync(uploadDir);
@@ -1130,211 +1138,16 @@ app.get('/download/:id', (req, res) => {
   metadata.downloadCount = (metadata.downloadCount || 0) + 1;
   saveMetadata();
 
-  const sizeStr = formatBytes(metadata.size || 0);
+  // Redirect directly to GitHub Releases download URL to use ZERO server/Vercel bandwidth
+  if (metadata.githubDownloadUrl) {
+    return res.redirect(metadata.githubDownloadUrl);
+  }
 
-  // Serve a clean, ultra-minimal automatic downloader page to mask GitHub S3 URLs completely without using server bandwidth
-  const htmlContent = `<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Downloading ${metadata.originalName}...</title>
-  <style>
-    body {
-      background-color: #0b0f19;
-      color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-    }
-    .loader-box {
-      text-align: center;
-      max-width: 420px;
-      width: 85%;
-      padding: 32px 24px;
-      background: rgba(17, 24, 39, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    }
-    .file-name {
-      font-size: 16px;
-      font-weight: 600;
-      color: #ffffff;
-      margin-bottom: 4px;
-      word-break: break-all;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-    }
-    .file-size {
-      font-size: 13px;
-      color: #64748b;
-      margin-bottom: 24px;
-    }
-    .progress-container {
-      background: #1e293b;
-      height: 6px;
-      border-radius: 3px;
-      width: 100%;
-      overflow: hidden;
-      margin-bottom: 12px;
-    }
-    .progress-bar {
-      background: linear-gradient(90deg, #3b82f6, #6366f1);
-      height: 100%;
-      width: 0%;
-      border-radius: 3px;
-      transition: width 0.1s linear;
-    }
-    .status-text {
-      font-size: 13px;
-      color: #94a3b8;
-      margin-bottom: 8px;
-      font-weight: 500;
-    }
-    .percentage {
-      font-size: 13px;
-      color: #3b82f6;
-      font-weight: 700;
-      margin-bottom: 20px;
-    }
-    .info {
-      font-size: 11px;
-      color: #475569;
-      line-height: 1.5;
-    }
-    .fallback-link {
-      margin-top: 16px;
-      display: inline-block;
-      font-size: 11px;
-      color: #475569;
-      text-decoration: underline;
-      cursor: pointer;
-    }
-    .fallback-link:hover {
-      color: #94a3b8;
-    }
-  </style>
-</head>
-<body>
-  <div class="loader-box">
-    <div class="file-name">${metadata.originalName}</div>
-    <div class="file-size">Size: ${sizeStr}</div>
-    
-    <div class="status-text" id="status-text">Preparing download...</div>
-    <div class="progress-container">
-      <div id="progress-bar" class="progress-bar"></div>
-    </div>
-    <div class="percentage" id="percent-text">0%</div>
-
-    <div class="info">
-      Please do not close this window. Your download is being processed securely.
-    </div>
-    <a href="/download/stream/${id}" class="fallback-link">Problems downloading? Click here to stream directly</a>
-  </div>
-
-  <script>
-    const fileId = "${id}";
-    const fileName = "${metadata.originalName.replace(/"/g, '\\"')}";
-    const fileMime = "${metadata.mimeType || 'application/octet-stream'}";
-    const fileSize = ${metadata.size || 0};
-
-    const progressBar = document.getElementById('progress-bar');
-    const percentText = document.getElementById('percent-text');
-    const statusText = document.getElementById('status-text');
-
-    async function startDownload() {
-      try {
-        statusText.innerText = "Connecting to source...";
-        
-        // 1. Resolve final direct URL (bypassing github redirect to get S3 object directly)
-        const urlRes = await fetch('/api/get-direct-url/' + fileId);
-        if (!urlRes.ok) throw new Error("Failed to resolve URL");
-        const urlData = await urlRes.json();
-        if (!urlData.success || !urlData.url) throw new Error("Invalid URL");
-
-        statusText.innerText = "Downloading file...";
-        
-        // 2. Fetch directly from S3 (CORS-enabled)
-        const response = await fetch(urlData.url);
-        if (!response.ok) throw new Error("Direct download failed");
-
-        const reader = response.body.getReader();
-        const totalBytes = fileSize || Number(response.headers.get('content-length')) || 0;
-        let receivedBytes = 0;
-        const chunks = [];
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          if (value) {
-            chunks.push(value);
-            receivedBytes += value.length;
-            if (totalBytes > 0) {
-              const percent = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
-              progressBar.style.width = percent + '%';
-              percentText.innerText = percent + '%';
-              statusText.innerText = "Downloading (" + formatBytes(receivedBytes) + " of " + formatBytes(totalBytes) + ")...";
-            } else {
-              statusText.innerText = "Downloading (" + formatBytes(receivedBytes) + ")...";
-            }
-          }
-        }
-
-        statusText.innerText = "Saving to your device...";
-        progressBar.style.width = '100%';
-        percentText.innerText = '100%';
-
-        // 3. Trigger local save using Blob (ensures current domain is recorded in browser download history)
-        const blob = new Blob(chunks, { type: fileMime });
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-
-        setTimeout(() => {
-          URL.revokeObjectURL(blobUrl);
-          statusText.innerText = "Completed!";
-          setTimeout(() => {
-            window.close();
-            // fallback in case window can't be closed
-            setTimeout(() => {
-              window.location.href = "/";
-            }, 500);
-          }, 1000);
-        }, 1000);
-
-      } catch (err) {
-        console.error("Client download error, falling back to server-stream:", err);
-        statusText.innerText = "Streaming via backup server...";
-        window.location.href = "/download/stream/" + fileId;
-      }
-    }
-
-    function formatBytes(bytes, decimals = 2) {
-      if (!bytes || bytes === 0) return '0 Bytes';
-      const k = 1024;
-      const dm = decimals < 0 ? 0 : decimals;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-    }
-
-    window.addEventListener('DOMContentLoaded', startDownload);
-  </script>
-</body>
-</html>`;
-
-  res.send(htmlContent);
+  // Local fallback
+  const files = fs.readdirSync(uploadDir);
+  const actualFile = files.find(f => f.startsWith(id));
+  if (!actualFile) return res.status(404).send('File missing on disk');
+  res.download(path.join(uploadDir, actualFile), metadata.originalName);
 });
 
 // Also support /download/d/:id (the specific short route format)
@@ -1346,6 +1159,9 @@ app.get('/preview/:id', (req, res) => {
   const id = req.params.id;
   const metadata = filesMetadata[id];
   
+  // Cache previews for 1 day in CDN/Browser to save origin bandwidth
+  res.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+
   if (metadata && metadata.githubDownloadUrl) {
     return streamFromUrl(metadata.githubDownloadUrl, res);
   }

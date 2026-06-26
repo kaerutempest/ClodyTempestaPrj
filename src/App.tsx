@@ -212,7 +212,7 @@ export default function App() {
 
   useEffect(() => {
     fetchSettings();
-    const interval = setInterval(fetchSettings, 5000); // Check every 5s for fast maintenance sync
+    const interval = setInterval(fetchSettings, 60000); // Optimized checking every 60 seconds to prevent serverless function spam
     return () => clearInterval(interval);
   }, []);
 
@@ -401,7 +401,7 @@ export default function App() {
     }
   };
 
-  const triggerDownload = async (file: FileMetadata) => {
+  const triggerDownload = (file: FileMetadata) => {
     if (file.type === 'folder') return;
 
     // Track download count in backend
@@ -409,74 +409,24 @@ export default function App() {
       fetch(`/api/download/${file.id}`, { method: 'HEAD' }).catch(() => {});
     } catch (e) {}
 
+    // Show high-fidelity animated feedback for 1.2 seconds, then dismiss
     setDownloadingFileId(file.id);
-    setDownloadProgress(0);
+    setDownloadProgress(35);
+    
+    setTimeout(() => {
+      setDownloadProgress(75);
+    }, 400);
 
-    try {
-      // 1. Get the direct final URL (resolves GitHub redirect to CDN direct S3/objects.githubusercontent link)
-      const urlRes = await fetch(`/api/get-direct-url/${file.id}`);
-      if (!urlRes.ok) throw new Error("Gagal mendapatkan URL unduhan");
-      const urlData = await urlRes.json();
-      if (!urlData.success || !urlData.url) throw new Error("URL unduhan tidak valid");
+    setTimeout(() => {
+      setDownloadProgress(100);
+    }, 800);
 
-      // 2. Fetch direct from the CORS-enabled direct URL
-      const response = await fetch(urlData.url);
-      if (!response.ok) {
-        throw new Error(`Failed to download from source (Status ${response.status})`);
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        // Fallback if reader is not supported
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = file.originalName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(blobUrl);
-        setDownloadingFileId(null);
-        return;
-      }
-
-      const totalBytes = file.size || Number(response.headers.get('content-length')) || 0;
-      let receivedBytes = 0;
-      const chunks: Uint8Array[] = [];
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (value) {
-          chunks.push(value);
-          receivedBytes += value.length;
-          if (totalBytes > 0) {
-            const percent = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
-            setDownloadProgress(percent);
-          }
-        }
-      }
-
-      const blob = new Blob(chunks, { type: file.mimeType || 'application/octet-stream' });
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = file.originalName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => {
-        URL.revokeObjectURL(blobUrl);
-      }, 1000);
-
+    setTimeout(() => {
       setDownloadingFileId(null);
-    } catch (err) {
-      console.error('Frontend download error, falling back to server stream:', err);
-      // Fallback to standard server-authoritative stream which also hides github completely
-      window.location.href = `/download/stream/${file.id}`;
-      setDownloadingFileId(null);
-    }
+    }, 1200);
+
+    // Standard redirect download directly to GitHub releases so zero bandwidth is consumed on serverless function host
+    window.location.href = `/download/${file.id}`;
   };
 
   const handleFolderCreate = async (e: React.FormEvent<HTMLFormElement>) => {
