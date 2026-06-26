@@ -966,7 +966,7 @@ app.get('/api/folder-path/:id', (req, res) => {
   res.json(list);
 });
 
-const streamFromUrl = (url: string, res: express.Response, filename?: string, attempts = 0) => {
+const streamFromUrl = (url: string, res: express.Response, filename?: string, attempts = 0, shouldCache = false) => {
   if (attempts > 5) {
     return res.status(500).send('Too many redirects');
   }
@@ -976,11 +976,16 @@ const streamFromUrl = (url: string, res: express.Response, filename?: string, at
 
     // Follow HTTP redirects safely
     if (statusCode >= 300 && statusCode < 400 && githubRes.headers.location) {
-      return streamFromUrl(githubRes.headers.location, res, filename, attempts + 1);
+      return streamFromUrl(githubRes.headers.location, res, filename, attempts + 1, shouldCache);
     }
 
     if (statusCode >= 400) {
       return res.status(statusCode).send(`Error downloading from storage: ${githubRes.statusMessage || statusCode}`);
+    }
+
+    if (shouldCache) {
+      // Cache-Control headers for ultra-long CDN caching of APK files
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     }
 
     if (filename) {
@@ -1097,28 +1102,7 @@ app.get('/download/local/:id', (req, res) => {
   res.download(path.join(uploadDir, actualFile), metadata.originalName);
 });
 
-app.get('/download/stream/:id', (req, res) => {
-  const id = req.params.id;
-  const metadata = filesMetadata[id];
-  if (!metadata) return res.status(404).send('File not found');
-
-  if (metadata.type !== 'folder') {
-    metadata.downloadCount = (metadata.downloadCount || 0) + 1;
-    saveMetadata();
-  }
-
-  if (metadata.githubDownloadUrl) {
-    // Redirect instead of streaming through our server to conserve 100% bandwidth
-    return res.redirect(metadata.githubDownloadUrl);
-  }
-
-  const files = fs.readdirSync(uploadDir);
-  const actualFile = files.find(f => f.startsWith(id));
-  if (!actualFile) return res.status(404).send('File missing on disk');
-  res.download(path.join(uploadDir, actualFile), metadata.originalName);
-});
-
-app.get('/download/:id', (req, res) => {
+app.get(['/download/:id', '/api/download/:id', '/download/stream/:id', '/download/d/:id'], (req, res) => {
   const id = req.params.id;
   const metadata = filesMetadata[id];
   if (!metadata) return res.status(404).send('File not found');
@@ -1138,9 +1122,9 @@ app.get('/download/:id', (req, res) => {
   metadata.downloadCount = (metadata.downloadCount || 0) + 1;
   saveMetadata();
 
-  // Redirect directly to GitHub Releases download URL to use ZERO server/Vercel bandwidth
   if (metadata.githubDownloadUrl) {
-    return res.redirect(metadata.githubDownloadUrl);
+    // Proxy download with ultra-long CDN Cache-Control to save server bandwidth
+    return streamFromUrl(metadata.githubDownloadUrl, res, metadata.originalName, 0, true);
   }
 
   // Local fallback
@@ -1148,11 +1132,6 @@ app.get('/download/:id', (req, res) => {
   const actualFile = files.find(f => f.startsWith(id));
   if (!actualFile) return res.status(404).send('File missing on disk');
   res.download(path.join(uploadDir, actualFile), metadata.originalName);
-});
-
-// Also support /download/d/:id (the specific short route format)
-app.get('/download/d/:id', (req, res) => {
-  res.redirect(`/download/${req.params.id}`);
 });
 
 app.get('/preview/:id', (req, res) => {
