@@ -160,14 +160,18 @@ const ensurePrepopulatedResources = () => {
     filesMetadata[KAEDEX_FOLDER_ID].parentId = null;
   }
 
-  // 3. Ensure the 6 APKs exist inside the Kaeblox folder
+  // 3. Ensure the 10 APKs exist inside the Kaeblox folder
   const kaebloxApks = [
     { name: 'Kaeblox_1.apk', id: '333bf9a79acaabd8', assetId: 442282636, order: 1 },
     { name: 'Kaeblox_2.apk', id: '265bd61f51043795', assetId: 442282823, order: 2 },
     { name: 'Kaeblox_3.apk', id: '7a5a47fddaec128e', assetId: 442283208, order: 3 },
     { name: 'Kaeblox_4.apk', id: '8e59efeb2570fe2d', assetId: 442283710, order: 4 },
     { name: 'Kaeblox_5.apk', id: 'afe8800e2d890f8b', assetId: 442284104, order: 5 },
-    { name: 'Kaeblox_6.apk', id: '0d69c32ef99e9916', assetId: 442284542, order: 6 }
+    { name: 'Kaeblox_6.apk', id: '0d69c32ef99e9916', assetId: 442284542, order: 6 },
+    { name: 'Kaeblox_7.apk', id: '9c5dfa3d1209b67a', assetId: 442284543, order: 7 },
+    { name: 'Kaeblox_8.apk', id: '3a5dfe762b9a710e', assetId: 442284544, order: 8 },
+    { name: 'Kaeblox_9.apk', id: 'e3f019b882cd8d1e', assetId: 442284545, order: 9 },
+    { name: 'Kaeblox_10.apk', id: '03ba67df3c9c642f', assetId: 442284546, order: 10 }
   ];
 
   kaebloxApks.forEach((apk, index) => {
@@ -195,14 +199,18 @@ const ensurePrepopulatedResources = () => {
     }
   });
 
-  // 4. Ensure the 6 APKs exist inside the Kaedex folder
+  // 4. Ensure the 10 APKs exist inside the Kaedex folder
   const kaedexApks = [
     { name: 'Kaedex_1.apk', id: '420fc42814db62cf', assetId: 442316865, order: 1 },
     { name: 'Kaedex_2.apk', id: 'd36830df16d6e7ae', assetId: 442317733, order: 2 },
     { name: 'Kaedex_3.apk', id: '7a66b06cc1a91885', assetId: 442318468, order: 3 },
     { name: 'Kaedex_4.apk', id: 'cc64aa222d69740a', assetId: 442318771, order: 4 },
     { name: 'Kaedex_5.apk', id: 'f6980f0ddc0fc10f', assetId: 442319153, order: 5 },
-    { name: 'Kaedex_6.apk', id: '72bb15566b7d937c', assetId: 442319514, order: 6 }
+    { name: 'Kaedex_6.apk', id: '72bb15566b7d937c', assetId: 442319514, order: 6 },
+    { name: 'Kaedex_7.apk', id: '15d3198ff6980e1b', assetId: 442319515, order: 7 },
+    { name: 'Kaedex_8.apk', id: 'ba76e3d2cc1f6cb9', assetId: 442319516, order: 8 },
+    { name: 'Kaedex_9.apk', id: 'de72cf856b3ab2e8', assetId: 442319517, order: 9 },
+    { name: 'Kaedex_10.apk', id: '5f921ea6cc17ba0f', assetId: 442319518, order: 10 }
   ];
 
   kaedexApks.forEach((apk, index) => {
