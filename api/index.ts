@@ -189,7 +189,7 @@ const ensurePrepopulatedResources = () => {
       filesMetadata[apk.id] = {
         id: apk.id,
         originalName: apk.name,
-        size: 94292785,
+        size: 108055143,
         mimeType: 'application/vnd.android.package-archive',
         uploadDate: 1779110521923 + index,
         type: 'file',
@@ -204,7 +204,7 @@ const ensurePrepopulatedResources = () => {
       filesMetadata[apk.id].parentId = KAEBLOX_FOLDER_ID;
       filesMetadata[apk.id].githubDownloadUrl = downloadUrl;
       filesMetadata[apk.id].order = apk.order;
-      filesMetadata[apk.id].size = 94292785;
+      filesMetadata[apk.id].size = 108055143;
       filesMetadata[apk.id].githubAssetId = apk.assetId;
     }
   });
