@@ -160,81 +160,64 @@ const ensurePrepopulatedResources = () => {
     filesMetadata[KAEDEX_FOLDER_ID].parentId = null;
   }
 
+  // Clean up old duplicate/fake Kaeblox entries with wrong IDs
+  const fakeIdsToDelete = ['9c5dfa3d1209b67a', '3a5dfe762b9a710e', 'e3f019b882cd8d1e', '03ba67df3c9c642f'];
+  fakeIdsToDelete.forEach(id => {
+    if (filesMetadata[id]) {
+      delete filesMetadata[id];
+    }
+  });
+
   // 3. Ensure the 10 APKs exist inside the Kaeblox folder
   const kaebloxApks = [
-    { name: 'Kaeblox_1.apk', id: '333bf9a79acaabd8', assetId: 442282636, order: 1 },
-    { name: 'Kaeblox_2.apk', id: '265bd61f51043795', assetId: 442282823, order: 2 },
-    { name: 'Kaeblox_3.apk', id: '7a5a47fddaec128e', assetId: 442283208, order: 3 },
-    { name: 'Kaeblox_4.apk', id: '8e59efeb2570fe2d', assetId: 442283710, order: 4 },
-    { name: 'Kaeblox_5.apk', id: 'afe8800e2d890f8b', assetId: 442284104, order: 5 },
-    { name: 'Kaeblox_6.apk', id: '0d69c32ef99e9916', assetId: 442284542, order: 6 },
-    { name: 'Kaeblox_7.apk', id: '9c5dfa3d1209b67a', assetId: 442284543, order: 7 },
-    { name: 'Kaeblox_8.apk', id: '3a5dfe762b9a710e', assetId: 442284544, order: 8 },
-    { name: 'Kaeblox_9.apk', id: 'e3f019b882cd8d1e', assetId: 442284545, order: 9 },
-    { name: 'Kaeblox_10.apk', id: '03ba67df3c9c642f', assetId: 442284546, order: 10 }
+    { name: 'Kaeblox_1.apk', id: '333bf9a79acaabd8', assetId: 455325571, order: 1 },
+    { name: 'Kaeblox_2.apk', id: '265bd61f51043795', assetId: 455325744, order: 2 },
+    { name: 'Kaeblox_3.apk', id: '7a5a47fddaec128e', assetId: 455326623, order: 3 },
+    { name: 'Kaeblox_4.apk', id: '8e59efeb2570fe2d', assetId: 455326810, order: 4 },
+    { name: 'Kaeblox_5.apk', id: 'afe8800e2d890f8b', assetId: 455326925, order: 5 },
+    { name: 'Kaeblox_6.apk', id: '0d69c32ef99e9916', assetId: 455327081, order: 6 },
+    { name: 'Kaeblox_7.apk', id: 'ba5df3b11d376c4f', assetId: 455327209, order: 7 },
+    { name: 'Kaeblox_8.apk', id: 'd8404199caae667b', assetId: 455327411, order: 8 },
+    { name: 'Kaeblox_9.apk', id: 'eba2107b52fb9385', assetId: 455327552, order: 9 },
+    { name: 'Kaeblox_10.apk', id: '84d6cd72c438c1da', assetId: 455327681, order: 10 }
   ];
 
   kaebloxApks.forEach((apk, index) => {
+    const downloadUrl = `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaeblox%28ForA12%2B%29/${apk.name}`;
+
     if (!filesMetadata[apk.id]) {
       filesMetadata[apk.id] = {
         id: apk.id,
         originalName: apk.name,
-        size: 118039181,
+        size: 94292785,
         mimeType: 'application/vnd.android.package-archive',
         uploadDate: 1779110521923 + index,
         type: 'file',
         parentId: KAEBLOX_FOLDER_ID,
         githubAssetId: apk.assetId,
-        githubDownloadUrl: `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaeblox%28ForA12%2B%29/${apk.name}`,
+        githubDownloadUrl: downloadUrl,
         order: apk.order
       };
     } else {
       // Ensure the download urls, parentId, and naming are completely aligned
       filesMetadata[apk.id].originalName = apk.name;
       filesMetadata[apk.id].parentId = KAEBLOX_FOLDER_ID;
-      filesMetadata[apk.id].githubDownloadUrl = `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaeblox%28ForA12%2B%29/${apk.name}`;
+      filesMetadata[apk.id].githubDownloadUrl = downloadUrl;
       filesMetadata[apk.id].order = apk.order;
-      filesMetadata[apk.id].size = 118039181;
+      filesMetadata[apk.id].size = 94292785;
       filesMetadata[apk.id].githubAssetId = apk.assetId;
     }
   });
 
-  // 4. Ensure the 10 APKs exist inside the Kaedex folder
-  const kaedexApks = [
-    { name: 'Kaedex_1.apk', id: '420fc42814db62cf', assetId: 442316865, order: 1 },
-    { name: 'Kaedex_2.apk', id: 'd36830df16d6e7ae', assetId: 442317733, order: 2 },
-    { name: 'Kaedex_3.apk', id: '7a66b06cc1a91885', assetId: 442318468, order: 3 },
-    { name: 'Kaedex_4.apk', id: 'cc64aa222d69740a', assetId: 442318771, order: 4 },
-    { name: 'Kaedex_5.apk', id: 'f6980f0ddc0fc10f', assetId: 442319153, order: 5 },
-    { name: 'Kaedex_6.apk', id: '72bb15566b7d937c', assetId: 442319514, order: 6 },
-    { name: 'Kaedex_7.apk', id: '15d3198ff6980e1b', assetId: 442319515, order: 7 },
-    { name: 'Kaedex_8.apk', id: 'ba76e3d2cc1f6cb9', assetId: 442319516, order: 8 },
-    { name: 'Kaedex_9.apk', id: 'de72cf856b3ab2e8', assetId: 442319517, order: 9 },
-    { name: 'Kaedex_10.apk', id: '5f921ea6cc17ba0f', assetId: 442319518, order: 10 }
+  // 4. Remove all Kaedex files as requested since there are no files yet
+  const kaedexIdsToDelete = [
+    '420fc42814db62cf', 'd36830df16d6e7ae', '7a66b06cc1a91885', 'cc64aa222d69740a',
+    'f6980f0ddc0fc10f', '72bb15566b7d937c', '15d3198ff6980e1b', 'ba76e3d2cc1f6cb9',
+    'de72cf856b3ab2e8', '5f921ea6cc17ba0f'
   ];
-
-  kaedexApks.forEach((apk, index) => {
-    if (!filesMetadata[apk.id]) {
-      filesMetadata[apk.id] = {
-        id: apk.id,
-        originalName: apk.name,
-        size: 102878407,
-        mimeType: 'application/vnd.android.package-archive',
-        uploadDate: 1780972168586 + index,
-        type: 'file',
-        parentId: KAEDEX_FOLDER_ID,
-        githubAssetId: apk.assetId,
-        githubDownloadUrl: `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaedex/${apk.name}`,
-        order: apk.order
-      };
-    } else {
-      // Ensure the download urls, parentId, and naming are completely aligned
-      filesMetadata[apk.id].originalName = apk.name;
-      filesMetadata[apk.id].parentId = KAEDEX_FOLDER_ID;
-      filesMetadata[apk.id].githubDownloadUrl = `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaedex/${apk.name}`;
-      filesMetadata[apk.id].order = apk.order;
-      filesMetadata[apk.id].size = 102878407;
-      filesMetadata[apk.id].githubAssetId = apk.assetId;
+  kaedexIdsToDelete.forEach(id => {
+    if (filesMetadata[id]) {
+      delete filesMetadata[id];
     }
   });
 
@@ -1108,6 +1091,30 @@ app.get('/download/local/:id', (req, res) => {
   const actualFile = files.find(f => f.startsWith(id));
   if (!actualFile) return res.status(404).send('File missing on disk');
   res.download(path.join(uploadDir, actualFile), metadata.originalName);
+});
+
+app.get('/api/download/kaeblox/:num', (req, res) => {
+  const num = parseInt(req.params.num, 10);
+  if (isNaN(num) || num < 1 || num > 10) {
+    return res.status(400).send('Invalid file number');
+  }
+
+  const filename = `Kaeblox_${num}.apk`;
+  const githubUrl = `https://github.com/kaerutempest/ClodyStorage/releases/download/Kaeblox%28ForA12%2B%29/Kaeblox_${num}.apk`;
+
+  // Increment stats if possible
+  const kaebloxIds = [
+    '333bf9a79acaabd8', '265bd61f51043795', '7a5a47fddaec128e', '8e59efeb2570fe2d',
+    'afe8800e2d890f8b', '0d69c32ef99e9916', 'ba5df3b11d376c4f', 'd8404199caae667b',
+    'eba2107b52fb9385', '84d6cd72c438c1da'
+  ];
+  const fileId = kaebloxIds[num - 1];
+  if (fileId && filesMetadata[fileId]) {
+    filesMetadata[fileId].downloadCount = (filesMetadata[fileId].downloadCount || 0) + 1;
+    saveMetadata();
+  }
+
+  return streamFromUrl(githubUrl, res, filename, 0, true);
 });
 
 app.get(['/download/:id', '/api/download/:id', '/download/stream/:id', '/download/d/:id'], (req, res) => {
