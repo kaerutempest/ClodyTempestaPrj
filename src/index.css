@@ -4,6 +4,28 @@ html, body {
   scroll-behavior: smooth;
   overscroll-behavior-y: auto;
   -webkit-overflow-scrolling: touch;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* High-Performance 60FPS/120FPS GPU hardware-accelerated smooth scrolling styles */
+.smooth-scroll-optimization {
+  will-change: scroll-position, transform;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll-gpu-card {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform;
+}
+
+.scroll-item-optimize {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 64px;
 }
 
 /* Custom sleek, high-performance scrollbar */

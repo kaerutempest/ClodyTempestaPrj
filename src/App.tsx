@@ -404,11 +404,6 @@ export default function App() {
   const triggerDownload = (file: FileMetadata) => {
     if (file.type === 'folder') return;
 
-    // Track download count in backend
-    try {
-      fetch(`/api/download/${file.id}`, { method: 'HEAD' }).catch(() => {});
-    } catch (e) {}
-
     // Show high-fidelity animated feedback for 1.2 seconds, then dismiss
     setDownloadingFileId(file.id);
     setDownloadProgress(35);
@@ -1560,7 +1555,7 @@ export default function App() {
                     <motion.div 
                        key={file.id}
                        whileTap={{ scale: 0.985 }}
-                       className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-2 md:gap-4 items-center px-4 md:px-6 py-3 transition-colors group cursor-pointer transform-gpu ${isDarkActive ? 'hover:bg-white/10' : 'hover:bg-slate-50'}`}
+                       className={`grid grid-cols-[1fr_auto] md:grid-cols-[1fr_80px_120px_auto] gap-2 md:gap-4 items-center px-4 md:px-6 py-3 transition-colors group cursor-pointer transform-gpu scroll-item-optimize ${isDarkActive ? 'hover:bg-white/10' : 'hover:bg-slate-50'}`}
                        onClick={() => file.type === 'folder' ? enterFolder(file) : triggerDownload(file)}
                        style={{ willChange: "transform" }}
                     >
