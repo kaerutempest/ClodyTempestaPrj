@@ -800,7 +800,7 @@ app.post('/api/rename', (req, res) => {
   res.json({ success: true, item: metadata });
 });
 
-app.delete('/api/delete/:id', async (req, res) => {
+const deleteHandler = async (req: express.Request, res: express.Response) => {
   if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
   const { id } = req.params;
   const metadata = filesMetadata[id];
@@ -850,7 +850,10 @@ app.delete('/api/delete/:id', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Delete failed' });
   }
-});
+};
+
+app.delete('/api/delete/:id', deleteHandler);
+app.post('/api/delete/:id', deleteHandler);
 
 app.post('/api/reorder', (req, res) => {
   if (!isAdmin(req)) return res.status(401).json({ error: 'Unauthorized' });
@@ -957,31 +960,57 @@ app.get('/api/folder-path/:id', (req, res) => {
   res.json(list);
 });
 
-const streamFromUrl = (url: string, res: express.Response, filename?: string, attempts = 0, shouldCache = false) => {
+const streamFromUrl = (url: string, res: express.Response, filename?: string, attempts = 0, shouldCache = false, req?: express.Request) => {
   if (attempts > 5) {
     return res.status(500).send('Too many redirects');
   }
 
-  https.get(url, (githubRes) => {
+  const parsedUrl = new URL(url);
+  const method = req?.method || 'GET';
+  const options: https.RequestOptions = {
+    hostname: parsedUrl.hostname,
+    path: parsedUrl.pathname + parsedUrl.search,
+    method: method,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+  };
+
+  if (req?.headers.range) {
+    options.headers['Range'] = req.headers.range;
+  }
+
+  const clientReq = https.request(options, (githubRes) => {
     const statusCode = githubRes.statusCode || 0;
 
     // Follow HTTP redirects safely
     if (statusCode >= 300 && statusCode < 400 && githubRes.headers.location) {
-      return streamFromUrl(githubRes.headers.location, res, filename, attempts + 1, shouldCache);
+      return streamFromUrl(githubRes.headers.location, res, filename, attempts + 1, shouldCache, req);
     }
 
     if (statusCode >= 400) {
       return res.status(statusCode).send(`Error downloading from storage: ${githubRes.statusMessage || statusCode}`);
     }
 
+    res.status(statusCode);
+
     if (shouldCache) {
-      // Cache-Control headers for ultra-long CDN caching of APK files
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     }
 
     if (filename) {
-      // Decode and recode to handle special non-ascii characters nicely
-      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+      const asciiName = filename.replace(/[^\x20-\x7E]/g, '?');
+      res.setHeader('Content-Disposition', `attachment; filename="${asciiName.replace(/"/g, '\\"')}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    }
+
+    if (githubRes.headers['accept-ranges']) {
+      res.setHeader('Accept-Ranges', githubRes.headers['accept-ranges'] as string);
+    } else {
+      res.setHeader('Accept-Ranges', 'bytes');
+    }
+
+    if (githubRes.headers['content-range']) {
+      res.setHeader('Content-Range', githubRes.headers['content-range'] as string);
     }
     
     if (githubRes.headers['content-type']) {
@@ -995,12 +1024,16 @@ const streamFromUrl = (url: string, res: express.Response, filename?: string, at
     }
 
     githubRes.pipe(res);
-  }).on('error', (err) => {
+  });
+
+  clientReq.on('error', (err) => {
     console.error('Streaming failed:', err);
     if (!res.headersSent) {
       res.status(500).send('Connection failed while streaming package');
     }
   });
+
+  clientReq.end();
 };
 
 const resolveRedirectUrl = (urlStr: string, maxRedirects = 5): Promise<string> => {
@@ -1114,7 +1147,7 @@ app.get('/api/download/kaeblox/:num', (req, res) => {
     saveMetadata();
   }
 
-  return streamFromUrl(githubUrl, res, filename, 0, true);
+  return streamFromUrl(githubUrl, res, filename, 0, true, req);
 });
 
 app.get(['/download/:id', '/api/download/:id', '/download/stream/:id', '/download/d/:id'], (req, res) => {
@@ -1126,20 +1159,13 @@ app.get(['/download/:id', '/api/download/:id', '/download/stream/:id', '/downloa
     return res.redirect('/');
   }
 
-  // Support HEAD requests from React triggerDownload
-  if (req.method === 'HEAD') {
-    metadata.downloadCount = (metadata.downloadCount || 0) + 1;
-    saveMetadata();
-    return res.status(200).end();
-  }
-
   // Increment download count
   metadata.downloadCount = (metadata.downloadCount || 0) + 1;
   saveMetadata();
 
   if (metadata.githubDownloadUrl) {
     // Proxy download with ultra-long CDN Cache-Control to save server bandwidth
-    return streamFromUrl(metadata.githubDownloadUrl, res, metadata.originalName, 0, true);
+    return streamFromUrl(metadata.githubDownloadUrl, res, metadata.originalName, 0, true, req);
   }
 
   // Local fallback
@@ -1157,7 +1183,7 @@ app.get('/preview/:id', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400, s-maxage=86400');
 
   if (metadata && metadata.githubDownloadUrl) {
-    return streamFromUrl(metadata.githubDownloadUrl, res);
+    return streamFromUrl(metadata.githubDownloadUrl, res, undefined, 0, false, req);
   }
 
   const files = fs.readdirSync(uploadDir);
